@@ -1,0 +1,30 @@
+= Using bitnami-labs Sealed Secrets
+
+The idea is to Split Ingress traffic according to ** Enable Ingress Controller sharding
+** Enable Network polices
+
+Ingress Controller sharding is useful when balancing incoming traffic load among a set of Ingress Controllers and when isolating traffic to a specific Ingress Controller
+** To control that specific Pods will only accept communication form DMZ green or purple we will implement NetworkPolicy
+* Impact:
+** Segregate Ingress traffic through Ingress Controller Sharding; Dedicate 2 infra nodes (1 HA router shard) for each <<14-abbrev adoc#abbr-dmz-color-codes,DMZ color code>>
+** Additional Worker Nodes will be placed in each <<14-abbrev.adoc#abbr-dmz-color-codes,DMZ Color Code>> to have the ability of communication with the respective DMZ shard,
+and it will host applications' pods which should only accept communication from the ingress shard
+** Implement NetworkPolicy to control Ingress to the Pods isolation.
+
+
+.References :
+** https://github.com/bitnami-labs/sealed-secrets["Sealed Secrets" for Kubernetes]
+
+:sectnums:
+
+== Understand Sealed Secrets
+
+
+[source,bash]
+----
+oc create secret generic test-secret --from-literal=dummykey1=supersecret --from-literal=dummykey2=topsecret --from-literal=dummykey3=new-secret --dry-run -o yaml >test-secret.yaml
+cat test-secret.yaml |kubeseal --controller-namespace sealed-secrets -o yaml --scope strict --merge-into sealedtest-secret.yaml
+
+oc apply -f sealedtest-secret.yaml
+oc describe secret/test-secret
+----

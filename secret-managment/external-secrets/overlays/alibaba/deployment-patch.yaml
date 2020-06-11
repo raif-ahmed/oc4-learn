@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dev-kubernetes-external-secrets
+spec:
+  template:
+    spec:
+      containers:
+        - name: kubernetes-external-secrets
+          env:
+          - name: "ALICLOUD_ACCESS_KEY_ID"
+            value: "ACCESS_KEY_ID"
+          - name: "ALICLOUD_ACCESS_KEY_SECRET"
+            value: "ACCESS_KEY_SECRET"
+          - name: "ALICLOUD_ENDPOINT"
+            value: "kms.eu-central-1.aliyuncs.com"

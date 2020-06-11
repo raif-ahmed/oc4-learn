@@ -1,0 +1,147 @@
+= Custom API server Certificate
+
+The idea is to understand API server certificates and adding custom named certificate, You can add additional certificates to the API server
+to send based on the client’s requested URL, such as when a reverse proxy or load balancer is used to access the API endpoint
+so client using OC CLI they get a certificate that issued by a CA that clients trust.
+
+.References :
+** https://access.redhat.com/solutions/4505101[error: x509 certificate signed by unknown authority when logging in OpenShift 4 using the installation kubeconfig file]
+** https://access.redhat.com/solutions/2139851[make OpenShift certificate trusted by "oc login"]
+
+:sectnums:
+
+== Configuring a custom API server Certificate
+
+[IMPORTANT]
+====
+First thing we will start by examining the certificate we have, we should ensure that we have a valid full certificate chain
+
+* You must have the certificate and key, in the PEM format, for the client’s URL.
+* The certificate must be issued for the URL used by the client to reach the API server (api.<cluster_name>.<base_domain>)
+* The certificate must have the subjectAltName extension for the URL.
+[source,bash]
+----
+openssl crl2pkcs7 -nocrl -certfile <fullchain.pem> | openssl pkcs7 -print_certs -text -noout <1>
+----
+<1> replace <fullchain.pem> with your fullchain file name
+====
+
+[TIP]
+====
+To check information about servingCerts Object you can run explain command as follows;
+[source,bash]
+----
+oc explain apiserver.spec.servingCerts
+oc explain apiserver.spec.servingCerts.namedCertificates
+----
+====
+
+=== Create needed secret
+Create a secret that contains the certificate and key in the openshift-config namespace.
+
+[source,bash]
+----
+oc create secret tls api-cert \ <1>
+     --cert=</path/to/cert.crt> \ <2>
+     --key=</path/to/cert.key> \ <3>
+     -n openshift-config
+----
+<1> The name of the secret, we will refer this name in next steps
+<2> The path to the full certificate chain in pem format
+<3> The path to the key file.
+
+=== Update the API server to reference the created secret.
+
+[source,bash]
+----
+oc patch apiserver cluster --type=merge -p \
+'{"spec":{"servingCerts": {"namedCertificates":[{"names": ["api.<cluster_name>.<base_domain>"],"servingCertificate": {"name": "api-cert"}}]}}}'
+----
+
+=== Check if Everything is OK
+
+. Confirm if there are any kube-apiserver pods in CrashLoopBackoff or that have failed to start by running the following command:
++
+[source,bash]
+----
+oc get pods -n openshift-kube-apiserver -w | grep kube-apiserver
+----
++
+. Wait till all pods, are running again
++
+[CAUTION]
+====
+if problems happen, Remove the serving certificate from the apiserver/cluster resource.
+[source,bash]
+----
+oc patch apiserver cluster --type='json' -p='[{"op": "remove", "path": "/spec/servingCerts/namedCertificates"}]'
+----
+====
++
+. Check if API Server certificate have updated
++
+[source,bash]
+----
+openssl s_client -connect api.<cluster_name>.<base_domain>:6443 -servername api.<cluster_name>.<base_domain>
+----
++
+Check the signing authority of the returning certificate.
++
+. Now you should be able to login using the certificate chain you have
++
+[source,bash]
+----
+oc login https://api.<cluster_name>.<base_domain>:6443 --certificate-authority=$HOME/certificates/fullchain.pem
+----
+. To configure the oc client to use the certificate authority.
+.. Clean the old configuration, if any
++
+[source,bash]
+----
+oc config delete-cluster api-<cluster_name>-<base_domain>:6443
+----
+.. add the authority certificate chain to kubeconfig
++
+[source,bash]
+----
+oc config set-cluster api-<cluster_name>-<base_domain>:6443 --certificate-authority=$HOME/certificates/fullchain.pem
+----
++
+[IMPORTANT]
+====
+There are two certificates related to the oc client;
+
+* [.underline]#The API server certificate#, The CA which issues the API URL (kube-apiserver-localhost-signer) is included in the kubeconfig.
+This one will be used after login with any oc command you make.
+* [.underline]#The OAuth server certificate#,The CA which issues the Authentication endpoint (kube-apiserver-lb-signer)
+is not included in the kubeconfig and therefore must be trusted in the system and/or provided
+with --certificate-authority=parameter in the #login# command
+
+* In case you have different signing authorities do the following;
+
+** Append the API server CA to the following file
+to make all certificates signed by this authority trusted across all applications across all users of the machine:
++
+[source,bash]
+----
+cat api-signing-ca.pem > /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+----
+** Extract the CA of the ingress and save it to a file to use it in login (You can also make it system wide but in my case i was using self-signed)
++
+[source,bash]
+----
+oc rsh -n openshift-authentication <oauth-openshift-pod> cat /run/secrets/kubernetes.io/serviceaccount/ca.crt > ingress-ca.crt
+----
+** Merge the ingress server CA (ingress-ca.crt) and API server CA (tls-ca-bundle.pem)
++
+[source,bash]
+----
+cat ingress-ca.crt tls-ca-bundle.pem > merged-ca.crt
+----
+** Login with the merged ca chain
++
+[source,bash]
+----
+oc login -u username -p password https://api.example.local:6443 --certificate-authority=merged-ca.crt
+----
+====

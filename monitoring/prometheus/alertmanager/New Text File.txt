@@ -1,0 +1,48 @@
+
+
+oc -n openshift-monitoring get secret alertmanager-main --template='{{ index .data "alertmanager.yaml" }}' |base64 -d 
+
+oc -n openshift-monitoring create secret generic alertmanager-main --from-file=alertmanager.yaml --dry-run -o=yaml | oc -n openshift-monitoring replace secret --filename=-
+
+
+oc edit cm prometheus -n openshift-monitoring
+
+
+Masters:
+	Health of the masters, if 80% of the CPU/Memory is used trigger an alert
+
+       instance:node_cpu_utilisation:rate1m >= 0.8
+
+node_memory_MemFree_bytes/node_memory_MemTotal_bytes
+
+kube_node_status_allocatable_memory_bytes
+kube_node_status_capacity_memory_bytes
+
+node_memory_MemTotal_bytes/kube_node_status_capacity_memory_bytes
+
+sum(container_memory_rss) / sum(machine_memory_bytes)
+
+	If any master is down, trigger an alert
+
+	Already there etcdMembersDown
+
+Infra:
+	Health of the infra cluster, if 80% of the CPU is in use trigger an alert
+
+sum by (job) (up{job="kubelet",metrics_path="/metrics"} and on(node) kube_node_role{role="master"} == bool 1)
+
+	Memory of this cluster has to be specially monitored as it's running the EFK instances, what would be best practice?
+Already covered
+
+	Storage usage alerting, when a valid percentage of storage is already consumed trigger an alert, this is crucial for EFK to properly work
+        Alert when any infra node is down.
+
+
+BU:
+	the same but per BU, so we know when they are overloaded to reach out to users. Also, end-users would be able to see usage fortheir nodes
+
+
+I can extract the BU from (i need the exact label), but what we are going to monitor.
+
+
+sum by (job) (up{job="kubelet",metrics_path="/metrics"} and on(node) kube_node_labels{label_test_label_node="true"} == bool 1)

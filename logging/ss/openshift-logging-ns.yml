@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    openshift.io/description: Project to run Cluster Logging and ElasticSearch Operators
+    openshift.io/display-name: ""
+    openshift.io/node-selector: ""
+    openshift.io/requester: nxf60733
+    openshift.io/sa.scc.mcs: s0:c25,c20
+    openshift.io/sa.scc.supplemental-groups: 1000640000/10000
+    openshift.io/sa.scc.uid-range: 1000640000/10000
+    scheduler.alpha.kubernetes.io/defaultTolerations: '[{"operator":"Equal","key":"infra",
+      "value":"reserved"}]'
+  creationTimestamp: "2020-04-30T08:53:21Z"
+  labels:
+    openshift.io/cluster-logging: "true"
+    openshift.io/cluster-monitoring: "true"
+  name: openshift-logging
+  resourceVersion: "665084"
+  selfLink: /api/v1/namespaces/openshift-logging
+  uid: 0b2b3c4e-8ac0-11ea-a13f-00505691b701
+spec:
+  finalizers:
+  - kubernetes
+status:
+  phase: Active

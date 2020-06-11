@@ -1,0 +1,83 @@
+= Configuring Service serving certificates
+
+First i want to explain Service serving certificates idea is to support the secured inter-cluster communication (Communication between two pods running inside the cluster),
+i.e. service calling another service using SSL both are running inside OpenShift.
+
+Conceptually to allow secure communication between pods we have two options:
+
+. One idea is to have each application manage its own certificate and certificates are bundled part of the application images, and in this case the route exposed for this application is passthrough.
+. Another idea which we're discussing here is to utilize OpenShift dynamic generation of certificates using https://github.com/openshift/service-ca-operator[Service CA Operator].
+
+== Service CA Operator
+
+The operator have two controllers;
+
+. serving cert signer:
++
+Issues a signed serving certificate/key pair to services annotated with 'service.beta.openshift.io/serving-cert-secret-name' via a secret.
++
+. configmap cabundle injector:
++
+Watches for configmaps annotated with 'service.beta.openshift.io/inject-cabundle=true'
+and adds or updates a data item (key "service-ca.crt") containing the PEM-encoded CA signing bundle.
+Consumers of the configmap can then trust service-ca.crt in their TLS client configuration,
+allowing connections to services that utilize service-serving certificates.
++
+[IMPORTANT]
+====
+The certificate and key are automatically replaced when they get close to expiration.
+The service CA certificate, which signs the service certificates, is only valid for one year after OpenShift Container Platform is installed.
+====
+
+== How it will work
+
+. The workflow for server application will be the following;
+.. Annotate the service in front of the server pod with service.beta.openshift.io/serving-cert-secret-name.
++
+[source,bash]
+----
+oc annotate service <service-name> \ <1>
+     service.beta.openshift.io/serving-cert-secret-name=<secret-name> <2>
+----
+<1> <service-name> with the name of the service to secure.
+<2> <secret-name> will be the name of the generated secret containing the certificate and key pair. For convenience, it is recommended that this be the same as <service-name>.
+.. After the operator generates a secret for your service, your PodSpec can mount it, and the Pod will run after it becomes available.  Normally it will be your server certificate.
++
+[TIP]
+====
+** The certificate will be good for the internal service DNS name, <service.name>.<service.namespace>.svc.
+** *Exposing Traffic to external*;
+A common idea is to choose reencrypt for the route, so that we can use the
+same certificate in the server component to serve both internal and external requests
+and still use the OpenShift operator to manage the certificate.
+====
+. The workflow for consumer application will be the following;
++
+Both the router and the consuming pod need to be able to trust the dynamically generated certificates.
++
+The route by default will trust any certificates created by the OpenShift.
+And for the consuming service, we need to use the service account CA bundle to trust the generated certificates.
++
+.. Annotate A ConfigMap with service.beta.openshift.io/inject-cabundle=true.
++
+[source,bash]
+----
+oc annotate configmap <configmap-name> \ <1>
+     service.beta.openshift.io/inject-cabundle=true
+----
+<1> Replace <configmap-name> with the name of the ConfigMap to annotate.
++
+Once annotated, the cluster automatically injects the service CA certificate into the service-ca.crt key on the ConfigMap.
+Access to this CA certificate allows TLS clients to verify connections to services using service serving certificates.
+
+[TIP]
+====
+For 4.x the servie ca certificates are managed by the service CA operator: https://github.com/openshift/service-ca-operator
+
+The key and certificate are in the secret openshift-service-ca/signing-key. I haven't tried to change them.
+
+[source,bash]
+----
+oc get crd serviceca.operator.openshift.io -o yaml
+----
+====

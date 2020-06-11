@@ -1,0 +1,181 @@
+= Define NetworkPolicy for namespace
+
+The idea is to give a sample for applying NetworkPolicy in a sample project and explaining how it works
+
+.References :
+** https://kubernetes.io/docs/concepts/services-networking/network-policies[Kubernetes Network Policies]
+** https://docs.openshift.com/container-platform/4.3/networking/configuring-networkpolicy.html[Configuring network policy with OpenShift SDN]
+** https://access.redhat.com/solutions/3903301[]
+
+:sectnums:
+
+==  Pod inter-communications
+In OCP 4 By default, all Pods in a project are accessible from other Pods and network endpoints.
+To explain how Pod inter-communications lets try a simple sample
+
+[source,bash]
+----
+# ceate first sample application
+oc new-project sample1
+oc new-app httpd
+
+# ceate Second sample application
+oc new-project sample2
+oc new-app httpd
+
+----
+
+Now lets try to play with curl to check communication accessibility
+
+[source,bash]
+----
+# From sample1 call sample2
+oc exec -n sample1 $(oc get po -n sample1 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample2.svc.cluster.local:8080
+# From sample1 call sample1
+oc exec -n sample1 $(oc get po -n sample1 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample1.svc.cluster.local:8080
+
+# From sample2 call sample1
+oc exec -n sample2 $(oc get po -n sample2 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample1.svc.cluster.local:8080
+# From sample2 call sample2
+oc exec -n sample2 $(oc get po -n sample2 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample2.svc.cluster.local:8080
+
+----
+
+== Understand NetworkPolicy
+
+The Kubernetes v1 NetworkPolicy features are available in OpenShift Container Platform except for egress policy types and IPBlock.
+
+A sample NetworkPolicy
+
+[source, yaml]
+----
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-network-policy
+  namespace: my-namespace
+spec:
+  podSelector:
+    matchLabels:
+      role: db <1>
+  policyTypes:
+  - Ingress
+  ingress: <2>
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          project: myproject
+    - podSelector:
+        matchLabels:
+          role: frontend
+    ports:
+    - protocol: TCP
+      port: 6379
+----
+<1> This selects particular Pods in the "current" namespace, to apply the policy on.
+<2> List of whitelist ingress rules. Each rule allows traffic which matches the from sections.
+
+There are four kinds of selectors that can be specified in an ingress from section:
+
+* *podSelector:* This selects particular Pods in the same namespace as the NetworkPolicy which should be allowed as ingress sources or egress destinations.
+* *namespaceSelector:* This selects particular namespaces for which all Pods should be allowed as ingress sources or egress destinations.
+* *namespaceSelector and podSelector:* A single from entry that specifies both namespaceSelector and podSelector selects particular Pods within particular namespaces.
+
+[source, yaml]
+----
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-from-openshift-ingress
+spec:
+  ingress:
+    - from: <1>
+      - namespaceSelector:
+          matchLabels:
+            network.openshift.io/policy-group: ingress
+        podSelector:
+          matchLabels:
+            ingresscontroller.operator.openshift.io/deployment-ingresscontroller: default
+  podSelector: {}
+  policyTypes:
+  - Ingress
+----
+<1> Single from element allowing connections from Pods with the label "ingresscontroller.operator.openshift.io/deployment-ingresscontroller=default" in namespaces with the label "etwork.openshift.io/policy-group=ingress"
+
+== Configuring multitenant isolation using NetworkPolicy
+
+Following documentation https://docs.openshift.com/container-platform/4.3/networking/configuring-networkpolicy.html#nw-networkpolicy-multitenant-isolation_configuring-networkpolicy-plugin[Configuring multitenant isolation using NetworkPolicy]
+the following yaml will create multitenant isolation, so pods within same namesapce only are allowed to communicate, and also incoming communication from both ingress and monitoring
+
+.networkPolicy.yaml
+[source, yaml]
+----
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: deny-by-default
+spec:
+  podSelector:
+  ingress: []
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-from-openshift-ingress
+spec:
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            network.openshift.io/policy-group: ingress
+        podSelector:
+          matchLabels:
+            ingresscontroller.operator.openshift.io/deployment-ingresscontroller: default
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-openshift-monitoring
+spec:
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            network.openshift.io/policy-group: monitoring
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-same-namespace
+spec:
+  podSelector:
+  ingress:
+  - from:
+    - podSelector: {}
+----
+
+Now lets try again previous curl to check communication accessibility
+
+[source,bash]
+----
+# From sample1 call sample2 -- It should fail
+oc exec -n sample1 $(oc get po -n sample1 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample2.svc.cluster.local:8080
+# From sample1 call sample1
+oc exec -n sample1 $(oc get po -n sample1 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample1.svc.cluster.local:8080
+
+# From sample2 call sample1
+oc exec -n sample2 $(oc get po -n sample2 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample1.svc.cluster.local:8080
+# From sample2 call sample2
+oc exec -n sample2 $(oc get po -n sample2 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample2.svc.cluster.local:8080
+
+
+# Now test from ingress as it should successes 
+export POD_IP=$(oc get po -l deploymentconfig=httpd -n sample2 -o=jsonpath="{.items[0].status.podIP}")
+oc exec -n openshift-ingress $(oc get po -l ingresscontroller.operator.openshift.io/deployment-ingresscontroller=default --all-namespaces -o name |head -1) -- curl --max-time 2 http://${POD_IP}:8080
+----

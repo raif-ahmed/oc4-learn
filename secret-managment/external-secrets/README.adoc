@@ -1,0 +1,163 @@
+= Using GoDaddy Kubernetes External Secrets
+
+The idea is to use external secret management systems, like AWS Secrets Manager or HashiCorp Vault, to securely add secrets in Kubernetes.
+
+.References :
+** https://github.com/godaddy/kubernetes-external-secrets[Kubernetes External Secrets]
+
+:sectnums:
+
+== Understand External Secrets
+It is a *cluster controller* which is responsible to fetch secret data from external providers and add it to namespace so the Pods can use it.
+You define your external provider configuration through ExternalSecrets CR
+
+image::https://github.com/godaddy/kubernetes-external-secrets/raw/master/architecture.png[]
+
+== Installation
+I'm using a bash script to clone the whole repo, as the installer using helm charts i will convert it to template files and use kustomize to modify some
+resource files to remove helm related stuff.
+
+IMPORTANT:: You will need helm client to be installed on the machine, follow this link to https://helm.sh/docs/intro/install/[Install Helm]
+
+
+In case you changed the bash variable "InstanaceName",
+you will need to modify the resource name in all patch yaml files (helm generate the name based on instance name)
+
+.link:00_deploy.sh[]
+[source,bash]
+----
+export InstanaceName=dev <1>
+----
+<1> The helm instance name
+
+for example go to patch file and change the name
+
+.link:base/clusterrole-patch.yaml[]
+[source,yaml]
+----
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: dev-kubernetes-external-secrets <1>
+  labels:
+    helm.sh/chart: kubernetes-external-secrets-4.0.0
+    $patch: delet
+    app.kubernetes.io/managed-by: Helm
+    $patch: delete
+----
+<1> name should match helm instance name
+
+.link:base/kustomization.yaml[]
+[source,yaml]
+----
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kubernetes-external-secrets
+commonLabels:
+  app: kubernetes-external-secrets
+  app.kubernetes.io/instance: kubernetes-external-secrets
+
+
+resources:
+- kubernetes-external-secrets-namespace.yaml
+- templates/rbac.yaml
+- templates/serviceaccount.yaml
+- templates/service.yaml
+- templates/deployment.yaml
+
+patchesStrategicMerge:
+- clusterrole-patch.yaml
+- clusterrolebinding-secret-patch.yaml
+- clusterrolebinding-secret-auth-patch.yaml
+- serviceaccount-patch.yaml
+- service-patch.yaml
+- deployment-patch.yaml
+----
+
+The bash script configure the environment variable needed for each https://github.com/godaddy/kubernetes-external-secrets#backends[back-end external service], through https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/#bases-and-overlays[kustomization overlays].
+For example for Ali Baba, you modify the needed environment variable in the overlay patch file
+
+.link:overlays/alibaba/deployment-patch.yaml[]
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dev-kubernetes-external-secrets
+spec:
+  template:
+    spec:
+      containers:
+        - name: kubernetes-external-secrets
+          env:
+          - name: "ALICLOUD_ACCESS_KEY_ID"
+            value: "ACCESS_KEY_ID"
+          - name: "ALICLOUD_ACCESS_KEY_SECRET"
+            value: "ACCESS_KEY_SECRET"
+          - name: "ALICLOUD_ENDPOINT"
+            value: "kms.eu-central-1.aliyuncs.com"
+----
+
+and in the deploy bash script it use this specific overlay
+
+.link:00_deploy.sh[]
+[source,bash]
+----
+oc apply -k  overlays/alibaba/ <1>
+----
+<1> will deploy the controller with the needed Deployment environment variables for Ali Baba cloud
+
+[source,bash]
+----
+./00_deploy.sh
+----
+
+== What is ExternalSecrets
+
+ExternalSecrets is the Custom Resource definition that will be created after the installation.
+it defines the https://github.com/godaddy/kubernetes-external-secrets#backends[back-end external service] that will be used to retrieve the secret data
+
+[source,yaml]
+----
+apiVersion: kubernetes-client.io/v1
+kind: ExternalSecret
+metadata:
+  name: hello-service
+spec:
+  backendType: secretsManager
+  # optional: specify role to assume when retrieving the data
+  dataFrom:
+    - hello-service/credentials
+----
+
+== Create an ExternalSecret
+. create secret by using the aliyun-cli command
+[source,bash]
+----
+aliyun kms CreateSecret --SecretName db_cred --SecretData "{\"username\": \"test\", \"password\": \"123456\"}" --VersionId v001
+----
+
+. Create the CR yaml file
+
+[source,yaml]
+----
+apiVersion: kubernetes-client.io/v1
+kind: ExternalSecret
+metadata:
+  name: demo
+spec:
+  backendType: alicloudSecretsManager
+  roleArn: acs:ram::228462691213768868:role/demo <1>
+  dataFrom:
+  - db_cred <2>
+  versionStage: ACSCurrent
+----
+<1> (optional) specify role to assume using provided access key ID and access key secret when retrieving the data
+<2> match the same secret name you created using aliyun-cli
+<3> version of the secret, ACSCurrent means the latest
+
+. Apply the CR file
+[source,bash]
+----
+oc apply -f demo-external-secret.yaml
+----

@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    openshift.io/description: Project to run Cluster Logging and ElasticSearch Operators
+    openshift.io/display-name: ""
+    openshift.io/node-selector: ""
+    openshift.io/requester: nxf60733
+    openshift.io/sa.scc.mcs: s0:c25,c5
+    openshift.io/sa.scc.supplemental-groups: 1000610000/10000
+    openshift.io/sa.scc.uid-range: 1000610000/10000
+    scheduler.alpha.kubernetes.io/defaultTolerations: '[{"operator":"Equal","key":"infra",
+      "value":"reserved"}]'
+  creationTimestamp: "2020-04-30T08:53:13Z"
+  labels:
+    openshift.io/cluster-monitoring: "true"
+  name: openshift-operators-redhat
+  resourceVersion: "665368"
+  selfLink: /api/v1/namespaces/openshift-operators-redhat
+  uid: 068dd54b-8ac0-11ea-a13f-00505691b701
+spec:
+  finalizers:
+  - kubernetes
+status:
+  phase: Active

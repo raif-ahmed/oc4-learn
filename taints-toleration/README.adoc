@@ -1,0 +1,216 @@
+:data-uri:
+:toc: left
+:markup-in-source: +verbatim,+quotes,+specialcharacters
+:source-highlighter: rouge
+:icons: font
+:stylesdir: stylesheets
+:stylesheet: colony.css
+
+= Taint & Toleration
+
+.Goals
+
+* Understand the concepts of Taint & Toleration
+* How to use in Taint & Toleration OpenShift 4
+* Taint & Toleration as a way of dedicating resources
+
+.References :
+** https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/[]
+** https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#podtolerationrestriction[]
+** https://docs.openshift.com/container-platform/4.3/nodes/scheduling/nodes-scheduler-taints-tolerations.html[]
+** https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/[]
+
+:sectnums:
+
+== What is Taint ?
+Taint are kind of labeling that allow a node to repel a set of pods. You apply taints to a node through the node specification (NodeSpec).
+
+== What is Toleration ?
+Toleration is simply a way to overcome a taint. You apply toleration to a pod through the pod specification (PodSpec)
+
+[NOTE]
+====
+Taints and toleration work together to ensure that pods are not scheduled onto inappropriate nodes.
+One or more taints are applied to a node; this marks that the node should not accept any pods that do not tolerate the taints.
+====
+
+== Taint a Node
+Taint a node is similar to labeling a node.
+
+[source,bash]
+----
+oc taint nodes node1 key=value:NoSchedule <1>
+----
+<1> places a taint on node node1. The taint has key 'key', value 'value', and taint effect 'NoSchedule'.
+
+.Taint Effect
+[cols="2,5a"]
+|=======
+|Effect | Description
+
+|NoSchedule
+|
+* New pods that do not match the taint are not scheduled onto that node.
+* Existing pods on the node remain.
+
+|PreferNoSchedule
+|
+* New pods that do not match the taint might be scheduled onto that node, but the scheduler tries not to.
+* Existing pods on the node remain.
+
+|NoExecute
+|
+* New pods that do not match the taint cannot be scheduled onto that node.
+* Existing pods on the node that do not have a matching toleration are removed.
+|=======
+
+== Tolerate a Pod
+As Tolerations are set at pod level, it will also work with any higher level objects like deployments or even project.
+
+I will give couple of example of defining toleration
+.Deployment toleration
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 10
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.7.9
+        ports:
+        - containerPort: 80
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+----
+[[bookmrk-prj-toleration]]
+.Project toleration
+[source,yaml]
+----
+kind: Project
+apiVersion: "project.openshift.io/v1"
+metadata:
+  annotations:
+    openshift.io/description: ""
+    openshift.io/display-name: ""
+    openshift.io/requester: admin
+    scheduler.alpha.kubernetes.io/defaultTolerations: '[{"Key": "dedicated-node", "Operator":"Equal", "Value": "infra", "effect": "NoSchedule"}]' <1>
+    scheduler.alpha.kubernetes.io/tolerationsWhitelist: '[{"operator": "Exists", "effect": "NoSchedule", "key": "dedicated-node"}]' <2>
+  name: toleration-prj
+spec:
+  finalizers:
+  - kubernetes
+----
+<1> https://v1-16.docs.kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#podtolerationrestriction[PodTolerationRestriction admission controller] will merges the tolerations annotated on the namespace into the tolerations of the pod.
+<2> https://v1-16.docs.kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#podtolerationrestriction[PodTolerationRestriction admission controller]  will verify the resulting tolerations are checked against the namespace’s whitelist of tolerations.
+
+.Important Note about Project toleration
+[IMPORTANT]
+====
+* Tolerations to a namespace are assigned via annotation keys.
+[source,yaml]
+----
+scheduler.alpha.kubernetes.io/defaultTolerations
+scheduler.alpha.kubernetes.io/tolerationsWhitelist
+----
+. https://v1-16.docs.kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#podtolerationrestriction[PodTolerationRestriction]:
+Is the admission controller responsible for verifying any conflict between a pod’s tolerations and its namespace’s tolerations, it work as follows;
+.. It merges the namespace’s tolerations <<bookmrk-prj-toleration,"See (1)">> into the pod’s tolerations.
+.. Resulting tolerations are checked against the namespace’s whitelist of tolerations <<bookmrk-prj-toleration,"See (2)">>.
+.. If the check succeeds, the pod request is admitted otherwise rejected.
+
+. Due to way of scheduling of DaemonSet (DS) (for more info see https://docs.openshift.com/container-platform/4.3/nodes/jobs/nodes-pods-daemonsets.html#scheduled-by-default-scheduler[DaemonSet: Scheduled by default scheduler] and https://v1-14.docs.kubernetes.io/docs/concepts/workloads/controllers/daemonset/#how-daemon-pods-are-scheduled[How Daemon Pods are Scheduled]),
+* Even though DS pods go through admission chain, node assignment is already done by DS controller before the pods go through the admission chain. *So it requires assigning toleration explicitly to DS pods.*
+
+** https://issues.redhat.com/browse/RFE-5[RFE to have a patch to address reconciliation between PodTolerationRestriction and DS controller as there has been for PodNodeSelector and DS controller]
+====
+== How Pod Toleration match Taint
+* A toleration “matches” a taint if the keys are the same and the effects are the same
+** if the operator is Equal and the values are equal
+** if the operator is Exists -> then value *should not* be specified
+** if the operator is not specified -> it defaults to Equal.
+
+.Example of Pod Toleration match Taint
+[%autowidth,cols=7*]
+|=======
+| 6.+^.^| Taint == oc taint nodes node1 node-type=special:NoSchedule
+
+.3+^.^h| Toleration
+
+h|Key
+h|Operator
+h|Value
+h|Effect
+^.^h|Match
+h|Sample
+
+|node-type |Equal |special | NoSchedule
+^.^| *Yes*
+a|
+[source,yaml]
+----
+tolerations:
+- key: "node-type"
+  operator: "Equal"
+  value: "special"
+  effect: "NoSchedule"
+----
+
+|node-type |Exists | _N/A_ | NoSchedule
+^.^| *Yes*
+a|
+[source,yaml]
+----
+tolerations:
+- key: "node-type"
+  operator: "Exists"
+  effect: "NoSchedule"
+----
+|=======
+
+[NOTE]
+====
+There are two special cases:
+
+An empty key with operator Exists matches all keys, values and effects which means this will tolerate everything.
+
+tolerations:
+- operator: "Exists"
+An empty effect matches all effects with key key.
+
+tolerations:
+- key: "key"
+  operator: "Exists"
+====
+
+== Dedicating resources using Taints and Toleration
+
+Taints and tolerations are a flexible way to steer pods away from nodes or evict pods that shouldn’t be running.
+
+* *Dedicated Nodes*: Dedicate a set of nodes for exclusive use by a particular set of users, you can add a taint to those nodes and tolerate the dedicated pods.
++
+A common usecase in OCP 4 is Infra-node dedication https://docs.openshift.com/container-platform/4.3/machine_management/creating-infrastructure-machinesets.html#moving-resources-to-infrastructure-machinesets[Moving resources to infrastructure MachineSets],
+So by applying following commands you can dedicate a node and move ingress and image registry to this node.
++
+[source,bash]
+----
+oc patch node infra-host --type=merge -p '{"spec":{"taints": [{ "key":"infra", "value":"reserved", "effect":"NoSchedule"},{ "key":"infra", "value":"reserved", "effect":"NoExecute"}]}}'
+
+oc patch ingresscontroller default -n openshift-ingress-operator --type=merge -p '{"spec":{"nodePlacement":{"nodeSelector":{"matchLabels":{"node-role.kubernetes.io/infra":""}},"tolerations":[{"effect":"NoSchedule","key":"infra","operator":"Exists"},{"effect":"NoExecute","key":"infra","operator":"Exists"}]}}}'
+oc patch configs.imageregistry.operator.openshift.io/cluster -n openshift-image-registry --type=merge -p '{"spec":{"nodeSelector":{"node-role.kubernetes.io/infra":""},"tolerations":[{"effect":"NoSchedule","key":"infra","value":"reserved"},{"effect":"NoExecute","key":"infra","value":"reserved"}]}}'
+----
+
+* *Nodes with Special Hardware*: In a cluster where a small subset of nodes have specialized hardware (for example GPUs),
+it is desirable to keep pods that don’t need the specialized hardware off of those nodes, thus leaving room for later-arriving pods that do need the specialized hardware.
+This can be done by tainting the nodes that have the specialized hardware and adding a corresponding toleration to pods that use the special hardware.

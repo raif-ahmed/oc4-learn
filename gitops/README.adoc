@@ -1,0 +1,22 @@
+:data-uri:
+:toc: left
+:markup-in-source: +verbatim,+quotes,+specialcharacters
+:source-highlighter: rouge
+:icons: font
+:stylesdir: stylesheets
+:stylesheet: colony.css
+
+= GitOps
+GitOps is a way to do Kubernetes or OpenShift cluster management through declarative management of API Objects manifests (yaml files)
+rather than configuration drifting through applying cli commands.
+So in this case Git becomes the single source of truth that contains all your configuration as "yaml files"
+and you can apply same configuration again and again to achieve same results.
+
+:sectnums:
+
+== Manage API Objects, using Kustomize
+Explaining How to deploy ArgoCD Operator using Kubernetes Kustomize and kustomization file.
+The use of Kustomize is mainly for educational purpose and to see how to utilize it for Declarative Management of Kubernetes Objects,
+indeed it is easier to use OpenShift Console UI to deploy the ArgoCD operator.
+
+link:argocd-operator[]

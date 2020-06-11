@@ -1,0 +1,132 @@
+* https://netapp-trident.readthedocs.io/en/stable-v20.01/[NetApp Trident]
++
+Trident is a dynamic storage provisioner for the containers ecosystem.
+It provides the ability to create storage volumes for containerized applications managed by OpenShift.
+Trident works with the portfolio of NetApp storage platforms to deliver storage on-demand to applications according to policies defined by the administrator.
++
+Trident v20.01 is optimized for OpenShift 4.
+Trident supports OpenShift 3.11, 4.2 and 4.3
+
+
+** Backend
++
+A Trident backend defines the relationship between Trident and a storage system.
+It tells Trident how to communicate with that <<mark-strg-typs,Storage system type>> and how Trident should provision volumes from it.
+Each instance of Trident can manage multiple backends and orchestrate storage. Trident will automatically offer up storage pools from backends that together match the requirements defined by a storage class.
++
+[[mark-strg-typs]]
+*** Storage system type
+
+**** ONTAP
++
+ONTAP is NetApp’s multiprotocol, unified storage operating system that provides advanced data management capabilities for any application. Either on-Premise on in-Cloud.
+Trident supports all ONTAP deployment models
+
+**** Cloud Volumes ONTAP
++
+Cloud Volumes ONTAP is a software-only storage appliance that runs the ONTAP data management software in the cloud.
+
+**** Azure NetApp Files
++
+Azure NetApp Files is an enterprise-grade Azure file share service, powered by NetApp.
+Please refer to {trident-installer-folder}/sample-input/
+
+**** Cloud Volumes Service for AWS
++
+NetApp Cloud Volumes Service for AWS is a cloud native file service that provides NAS volumes over NFS and SMB with all-flash performance.
+Please refer to {trident-installer-folder}/sample-input/
+
+**** Cloud Volumes Service for GCP
++
+NetApp Cloud Volumes Service for CGP is a cloud native file service that provides NAS volumes over NFS and SMB with all-flash performance.
++
+[TIP]
+====
+Some Common terms:
+
+* SVMs
++
+Storage Virtual Machines (SVMs, formerly known as Vservers)
+contain data volumes and one or more LIFs through which they serve data to the clients.
+SVMs can either contain one or more FlexVol volumes.
+
+* LIFs
++
+Logical Interfaces are where our IP addresses (or WWPNs for Fibre Channel and FCoE) live in NetApp ONTAP systems.
+Having the IP address applied at the Logical Interface level gives us more flexibility than would be possible if it was applied to a physical port
+
+* LUN
++
+A LUN (logical unit number) is an identifier for a device called a logical unit addressed by a SAN protocol.
+LUNs are the basic unit of storage in a SAN configuration.
+
+* Qtree
++
+A logically defined file system that can exist as a special subdirectory of the root directory within an internal volume
+====
+
+*** Choosing a backend driver for ONTAP
++
+For more information, please refer to
++
+**** https://netapp-trident.readthedocs.io/en/stable-v20.01/dag/kubernetes/integrating_trident.html#integrating-trident[Integrating Trident]
+**** https://netapp-trident.readthedocs.io/en/stable-v20.01/kubernetes/operations/tasks/backends/ontap.html[ONTAP (AFF/FAS/Select/Cloud)]
++
+Four different backend drivers are available for ONTAP systems.
+These drivers are differentiated by the protocol being used and how the volumes are provisioned on the storage system.
+Therefore, give careful consideration regarding which driver to deploy.
++
+At a higher level,
++
+. if your application has components which need shared storage (multiple pods accessing the same PVC) -> NAS based drivers would be the default choice.
+. if your application doesn't need shared storage (only needs non-shared storage) -> block-based iSCSI drivers meets the requirements
++
+Generally speaking, there is little difference between them for most applications,
+so often the decision is based upon whether or not shared storage (where more than one pod will need simultaneous access) is needed.
++
+The five drivers for ONTAP backends are listed below:
++
+|===
+| Driver | Description | Protocoal
+
+|ontap-nas
+|Each PV provisioned is a full ONTAP FlexVolume.
+|NFS
+
+|ontap-nas-economy
+|Each PV provisioned is a qtree, with up to 200 qtrees per FlexVolume
+|NFS
+
+|ontap-nas-flexgroup
+|Each PV provisioned as a full ONTAP FlexGroup, and all aggregates assigned to a SVM are used.
+|NFS
+
+|ontap-san
+|Each PV provisioned is a LUN within its own FlexVolume.
+|iSCSI
+
+|ontap-san-economy
+|Each PV provisioned is a LUN within a set of automatically managed FlexVols.
+|iSCSI
+
+|===
++
+====
+* The ontap-nas and ontap-san drivers create an ONTAP FlexVol for each PV. ONTAP supports up to 1000 FlexVols per cluster node with a cluster maximum of 12,000 FlexVols.
+If your persistent volume requirements fit within that limitation, those drivers are the preferred solution due to the granular data management capabilities they afford.
+
+* If you need more persistent volumes than may be accommodated by the FlexVol limits, choose the ontap-nas-economy or the ontap-san-economy driver.
+
+* The ontap-nas-economy driver creates PVs as ONTAP Qtrees within a pool of automatically managed FlexVols.
+Qtrees offer far greater scaling (think of qtree as just a folder within the volume), up to 100,000 per cluster node and 2,400,000 per cluster,
+at the expense of granular data management features (any specific properties like snapshot, bit tree mapping, dedup, compression, caching are volume based | Thanks Romuald).
+
+* The ontap-san-economy driver creates PVs as ONTAP LUNs within a pool of automatically managed FlexVols. Each PV maps to an ONTAP LUN and this driver offers higher scalability for SAN workloads. Depending on the storage array, ONTAP supports up to 8192 LUNs per cluster node and 16384 LUNs for an HA pair. Since PVs map to LUNs within shared FlexVols, Kubernetes VolumeSnapshots are created using ONTAP’s FlexClone technology. FlexClone LUNs and their parent LUNs share blocks, minimizing disk usage.
+====
++
+[TIP]
+====
+Trident 20.01 provides a set of Prometheus metrics that can be used to obtain insight on how Trident operates.
+You can now define a Prometheus target to gather the metrics exposed by Trident and obtain information on the backends it manages, the volumes it creates and so on.
+see https://netapp.io/2020/02/20/prometheus-and-trident/[]
+====

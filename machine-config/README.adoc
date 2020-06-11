@@ -1,0 +1,154 @@
+:data-uri:
+:toc: left
+:markup-in-source: +verbatim,+quotes,+specialcharacters
+:source-highlighter: rouge
+:icons: font
+:stylesdir: stylesheets
+:stylesheet: colony.css
+
+= Machine Config (MC)
+
+.Goals
+
+* Understand the concepts of Machine Config (MC)
+* Understand the concepts of Machine Config Pool (MCP)
+
+:sectnums:
+
+== What is Machine Config (MC)
+
+[[mc-definition]]
+The idea is simply to have a kind of OS modifications managed by the OCP cluster. So think of Machine config as a series of patches or OS modifications and they are all managed by Machine Config Operator (MCO).
+
+Lets have a look at a sample MC
+
+[[mc-sample-yaml]]
+[source,yaml]
+----
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: worker <1>
+  name: 50-examplecorp-chrony
+spec:
+  config:
+    ignition:
+      version: 2.2.0
+    storage:
+      files:
+      - contents:
+          source: data:text/plain;charset=utf-8;base64,c2VydmVyIGZvby5leGFtcGxlLm5ldCBtYXhkZWxheSAwLjQgb2ZmbGluZQpzZXJ2ZXIgYmFyLmV4YW1wbGUubmV0IG1heGRlbGF5IDAuNCBvZmZsaW5lCnNlcnZlciBiYXouZXhhbXBsZS5uZXQgbWF4ZGVsYXkgMC40IG9mZmxpbmUK
+        filesystem: root
+        mode: 0644
+        path: /etc/chrony.conf
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: worker <1>
+  name: 99-worker-ssh
+spec:
+  config:
+    ignition:
+      version: 2.2.0
+    passwd:
+      users:
+      - name: core
+        sshAuthorizedKeys:
+        - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCdQ0pTK1943z3EoGOaya7GeitmkGlrAtdhlC7JsfC3MNdtVle47IfsQwEhB/a0yuEwJtFNamIJgJHvremdIEdeE2SOKlYncG5cw3ylz4ddKah4PsygUZAlhY+ho0RTFLXnesEzUmAbFc+HD4DWXvJQZdrNtKSICOJMkU/uzuYLBzz1SXXoCEwBpWLFHqgtjtt0kJFmJua8sA2f7JgqN797jMS9fes73HPLefZU04tRErHIG2giy7v2yHAZQURNe38Ibk3KmrWqXbk1i7Pgdt0ISmniCOJCmoO7CgUzeSUsa+NJab5U1sKdcHpAGPec5Egv0zn7WCbzOGiIyl0xf+ne/1XwMvDK5BV7C1QamrJs5FbFlt2zHT82+PlHXMNCbNiDuaKU3D44aebjwwX3S1RNVXqk+2PH+TRimzj5aasREhlMyYGqgYVmT+a4l8tteT/2QmiBJLF698oyPGj8d9Y8mzAQywKnXXh6ilE/XcPknL7/AtJ8QP5jmzqHuO6T8FU=
+          core
+----
+<1> Label to be applied on this MachineConfig
+
+So MachineConfig is the source of machine configuration and is used for installation and first-boot, as well as upgrades.
+Using the ignition config format, you can manage machines.
+
+*But which component actually manage, the MC custom resources?*
+
+== https://github.com/openshift/machine-config-operator[Machine Config Operator (MCO)]
+
+The Machine Config Operator (MCO) is a cluster-level operator. It manages the operating system and keeps the cluster up to date and configured.
+One way to view the MCO is to treat the operating system itself as "just another Kubernetes component" that you can inspect and manage with oc.
+
+MCO manages 3 sub-components.
+
+** https://github.com/openshift/machine-config-operator/blob/master/docs/MachineConfigServer.md[machine-config-server] : Provide Ignition config to new machines joining the cluster. machine-config-server pods are running only on masters and should be used by all machines joining the cluster
+** https://github.com/openshift/machine-config-operator/blob/master/docs/MachineConfigController.md[machine-config-controller] : Control the upgrade of machines to desired configurations defined by a MachineConfig object for sets of machines individually.
+
+*** Further Sub-Components
+. [[mco-tmpl-cntrlr]] TemplateController: responsible for generating the MachineConfigs for pre-defined roles of machines from internal templates based on cluster configuration.
+. [[mco-updt-cntrlr]] UpdateController:  responsible for upgrading machines to desired MachineConfig by coordinating with a daemon running on each machine.
+. [[mco-rndr-cntrlr]] RenderController: responsible for discovering MachineConfigs for a Pool of Machines and generating the static MachineConfig.
+. [[mco-kube-cntrlr]] KubeletConfigController: responsible for wrapping custom Kubelet configurations within a CRD.
+
+** https://github.com/openshift/machine-config-operator/blob/master/docs/MachineConfigDaemon.md[machine-config-daemon] : Apply new machine configuration during update. The MachineConfigDaemon receives machine configuration in the form of a "rendered" or merged MachineConfig.
+
+
+[TIP]
+====
+Two Important keyword we need to remember
+
+* https://github.com/coreos/ignition[Ignition]: MCO uses CoreOS Ignition as a configuration format. see https://docs.openshift.com/container-platform/4.3/architecture/architecture-rhcos.html#rhcos-about-ignition_architecture-rhcos[About Ignition]
+* https://github.com/coreos/rpm-ostree[rpm-ostree]: Operating system updates use rpm-ostree, with ostree updates encapsulated inside a container image.
+====
+
+So if the MC is like a patch or OS changes <<mc-definition,see Machine Config>>,
+*then how MCO apply relevant patch to target machines ?*
+
+== Machine Config Pool
+
+The Machine Config Pool is the link between MC and target machines.
+Let’s examine the following sample to understand the Machine Config Pool.
+
+[[mcp-sample-yaml]]
+[source,yaml]
+----
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfigPool <1>
+metadata:
+  name: worker
+spec:
+  machineConfigSelector: <2>
+    matchLabels:
+      machineconfiguration.openshift.io/role: worker
+  nodeSelector: <3>
+    matchLabels:
+      node-role.kubernetes.io/worker: ""
+----
+<1> Declaration of the MachineConfigPool
+<2> Selector to select which Machine Config(s) that will be applied on this pool <<mc-sample-yaml,see Machine Config>>.
+<3> Selector to select which node will be part of this pool.
+
+[IMPORTANT]
+====
+* MachineSets vs MachineConfigPool
+
+MachineSets describe nodes with respect to cloud / machine provider.
+MachineConfigPool allows MachineConfigController components to define and provide status of machines in context of upgrades.
+MachineConfigPool also allows users to configure how upgrades are rolled out to the machines in a pool.
+
+NodeSelector can be replaced with reference to MachineSet.
+
+====
+
+So, previous <<mcp-sample-yaml,MCP>> will instruct the MCO (<<mco-rndr-cntrlr,RenderController>>) to select all MC with labels worker and merge all of them (static render) and the apply rendered MachineConfig file to node of worker (<<mco-updt-cntrlr,UpdateController>>).
+The Render controller generates static machine config objects named rendered-worker-xxx. If the machine config pool changes, then the render controller creates a new rendered-xxx and applies it.
+
+[TIP]
+====
+*Coordinate between UpdateController and the MachineConfigDaemon is done via node annotations*,
+
+* machine-config-daemon.v1.openshift.com/currentConfig : defines the current MachineConfig applied by MachineConfigDaemon.
+* machine-config-daemon.v1.openshift.com/desiredConfig : defines the desired MachineConfig that need to be applied by MachineConfigDaemon
+* machine-config-daemon.v1.openshift.com/state : defines the state of the MachineConfigDaemon, It can be done, working and degraded.
+* machineconfiguration.openshift.io/reason : defines the degraded reason or done.
+
+With these three fields it becomes possible to determine the update progress of the machine:
+
+. desiredConfig == currentConfig : The machine is up-to-date.
+. desiredConfig != currentConfig && state == working : The machine is not up-to-date, but is in the process of updating.
+. desiredConfig != currentConfig && state == degraded : The machine is not up-to-date and MachineConfigDaemon cannot apply the desired configuration.
+
+====

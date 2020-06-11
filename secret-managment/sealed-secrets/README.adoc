@@ -1,0 +1,106 @@
+= Using bitnami-labs Sealed Secrets
+
+The idea is to Encrypt your Secret into a SealedSecret, which is safe to store - even to a public repository.
+
+.References :
+** https://github.com/bitnami-labs/sealed-secrets["Sealed Secrets" for Kubernetes]
+
+:sectnums:
+
+== Understand Sealed Secrets
+Sealed Secrets is composed of two parts:
+
+* A cluster-side controller / operator
+* A client-side utility: kubeseal
+
+== Installation
+I'm using a bash script to download the controller file, then using https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization[kustomize] i modify some security context attributes. Then it download kubeseal utility
+
+[source,bash]
+----
+./00_deploy.sh
+----
+
+.link:base/kustomization.yaml[]
+[source,yaml]
+----
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: sealed-secrets
+commonLabels:
+  app: sealed-secrets
+resources:
+- sealed-secrets-namespace.yaml
+# it fails !! i don't know why ? i followed https://github.com/kubernetes-sigs/kustomize/blob/master/examples/remotedeploy.md#url-format
+#- github.com/bitnami-labs/sealed-secrets/releases/download/v0.12.4/controller.yaml
+- controller.yaml
+
+patchesJson6902:
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: sealed-secrets-controller
+  path: sc-patch.yaml
+----
+
+== What is kubeseal
+
+The kubeseal utility uses asymmetric crypto to encrypt secrets that only the controller can decrypt.
+The key certificate (public key portion) is used for sealing secrets, and needs to be available wherever kubeseal is going to be used.
+kubeseal will fetch the certificate from the controller at runtime, but public key certificate can also be download for offline usage by
+
+[source,bash]
+----
+kubeseal --fetch-cert >mycert.pem
+----
+
+and use it offline with
+
+[source,bash]
+----
+kubeseal --cert mycert.pem
+----
+
+== Create an Encrypted SealedSecret
+
+Encrypted SealedSecret cannot allow users to read a SealedSecret meant for a namespace they wouldn't have access to
+and just push a copy of it in a namespace where they can read secrets from.
+
+Sealed-secrets thus behaves as if each namespace had its own independent encryption key and thus once you seal a secret for a namespace,
+it cannot be moved in another namespace and decrypted there.
+
+[NOTE]
+====
+By default kubeseal will use current current context configured in ~/.kube/config. This will include server connection and active project
+you can display it by running
+[source,bash]
+----
+oc config current-context
+----
+====
+
+[source,bash]
+----
+oc create secret generic test-secret --from-literal=dummykey1=supersecret --from-literal=dummykey2=topsecret --dry-run -o yaml >test-secret.yaml
+cat test-secret.yaml |kubeseal --controller-namespace sealed-secrets -o yaml --scope strict > sealedtest-secret.yaml
+----
+
+Then create the SealedSecret, note that the actual Secret is created along.
+[source,bash]
+----
+oc apply -f sealedtest-secret.yaml
+oc describe secret/test-secret
+oc describe sealedsecret/test-secret
+----
+
+== Update an Encrypted SealedSecret
+
+[source,bash]
+----
+oc create secret generic test-secret --from-literal=dummykey1=supersecret --from-literal=dummykey2=topsecret --from-literal=dummykey3=new-secret --dry-run -o yaml >test-secret.yaml
+cat test-secret.yaml |kubeseal --controller-namespace sealed-secrets -o yaml --scope strict --merge-into sealedtest-secret.yaml
+
+oc apply -f sealedtest-secret.yaml
+oc describe secret/test-secret
+----

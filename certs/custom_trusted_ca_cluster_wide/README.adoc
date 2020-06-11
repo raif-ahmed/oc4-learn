@@ -1,0 +1,111 @@
+= Custom Cluster Trusted CA
+
+The idea is to add custom CA Cert so it can be cluster wide trusted.
+
+:sectnums:
+
+== Configuring a custom PKI
+Using the Proxy API to add cluster-wide trusted CA certificates. You must do this either during installation or at runtime.
+
+In this article, we only discuss the runtime steps.
+
+* At runtime, modify the default Proxy object to include your privately signed CA certificates.
++
+[TIP]
+====
+This involves creating a ConfigMap that contains the privately signed CA certificates that should be trusted by the cluster,
+and then modifying the proxy resource with the trustedCA referencing the privately signed certificates' ConfigMap.
+====
+
+. Create the file with the certificate chain
++
+[source,yaml]
+----
+apiVersion: v1
+data:
+  ca-bundle.crt: |
+    <MY_PEM_ENCODED_CERTS>
+kind: ConfigMap
+metadata:
+  name: user-ca-bundle
+  namespace: openshift-config
+----
+
+. Create the secret object
++
+[source,bash]
+----
+oc create -f user-ca-bundle.yaml
+----
+. patch the cluster proxy object
++
+[source,bash]
+----
+oc patch proxy.config.openshift.io cluster --type=merge -p '{"spec":{"trustedCA":{"name":"user-ca-bundle"}}}'
+----
+. Ensure the update is reflected in main trusted-ca-bundle
++
+[source,bash]
+----
+oc get -n openshift-config-managed cm trusted-ca-bundle
+----
++
+At this point all trusted-ca-bundle in all namespaces should be updated with the new ca-bundle
++
+[TIP]
+====
+Once your custom CA certificate is added to the cluster via ConfigMap,
+the Cluster Network Operator merges the user-provided and system CA certificates into a single bundle and injects
+the merged bundle into the Operator(s) requesting the trust bundle injection.
+Operators request this injection by creating an empty ConfigMap with the following label:
+[source,yaml]
+----
+config.openshift.io/inject-trusted-cabundle="true"
+----
+====
++
+You can check trusted-ca-bundle across any namespace
++
+[source,bash]
+----
+oc get cm --all-namespaces | grep trusted-ca-bundle
+----
+. In case an application wants to access newly merged CA-bundle (custom + cluster original),
+this is easy by creating an empty ConfigMap with label config.openshift.io/inject-trusted-cabundle="true"
++
+[source,yaml]
+----
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: trusted-ca-bundle
+  namespace: my-app-namespace
+  labels:
+    config.openshift.io/inject-trusted-cabundle: 'true'
+----
++
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-example-custom-ca-deployment
+  namespace: my-example-custom-ca-ns
+spec:
+  . . .
+    spec:
+      . . .
+      containers:
+        - name: my-container-that-needs-custom-ca
+          volumeMounts:
+          - name: trusted-ca-bundle
+            mountPath: /etc/pki/ca-trust/extracted/pem
+            readOnly: true
+      volumes:
+      - name: trusted-ca
+        configMap:
+          name: trusted-ca-bundle
+          items:
+            - key: ca-bundle.crt
+              path: tls-ca-bundle.pem
+----

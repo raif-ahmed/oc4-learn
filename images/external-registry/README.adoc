@@ -1,0 +1,26 @@
+Configuring additional trust stores for image registry access
+
+create a ConfigMap in the openshift-config namespace
+
+
+
+Image registry CA ConfigMap example
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: external-registry-ca
+data:
+  registry.example.com: |
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+  registry-with-port.example.com..5000: | 
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+
+If the registry has the port, such as registry-with-port.example.com:5000, : should be replaced with ...
+
+
+oc patch image.config.openshift.io/cluster --type merge -p '{"spec":{"additionalTrustedCA":{"name":"external-registry-ca"}}}'

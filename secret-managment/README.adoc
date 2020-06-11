@@ -1,0 +1,30 @@
+:data-uri:
+:toc: left
+:markup-in-source: +verbatim,+quotes,+specialcharacters
+:source-highlighter: rouge
+:icons: font
+:stylesdir: stylesheets
+:stylesheet: colony.css
+
+= Secret Management
+
+GitOps is a way to do Kubernetes or OpenShift cluster management through declarative management of API Objects manifests (yaml files)
+rather than configuration drifting through applying cli commands.
+So we will explore couple of option for secret management, the "GitOps" way.
+
+:sectnums:
+
+== Using bitnami-labs Sealed Secrets
+
+The idea is to Encrypt your Secret into a SealedSecret, which is safe to store.
+So your normal GitOps workflow is mainly not impacted as you will store SealedSecret "yaml" files rather than the standard secret yaml files.
+Sealed Secrets Controller is responsible to do the conversion for you.
+
+link:sealed-secrets[Bitnami Sealed Secrets]
+
+== Using GoDaddy Kubernetes External Secrets
+
+The idea is to use external secret management systems, like AWS Secrets Manager or HashiCorp Vault, to securely add secrets in Kubernetes.
+The controller is responsible to fetch secret data from external providers and add it to namespace
+
+link:external-secrets[GoDaddy Kubernetes External Secrets]

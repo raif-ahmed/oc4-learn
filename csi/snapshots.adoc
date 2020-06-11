@@ -1,0 +1,90 @@
+* Machine Config (MC)
++
+[[mc-definition]]
+The idea is simply to have a kind of OS patch managed by the OCP cluster. So think of Machine config as a series of patches/OS modifications and they are all managed by Machine Config Operator (MCO).
++
+Lets have a look at a sample MC
++
+[[mc-sample-yaml]]
+[source,yaml]
+----
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: worker <1>
+  name: 50-examplecorp-chrony
+spec:
+  config:
+    ignition:
+      version: 2.2.0
+    storage:
+      files:
+      - contents:
+          source: data:text/plain;charset=utf-8;base64,c2VydmVyIGZvby5leGFtcGxlLm5ldCBtYXhkZWxheSAwLjQgb2ZmbGluZQpzZXJ2ZXIgYmFyLmV4YW1wbGUubmV0IG1heGRlbGF5IDAuNCBvZmZsaW5lCnNlcnZlciBiYXouZXhhbXBsZS5uZXQgbWF4ZGVsYXkgMC40IG9mZmxpbmUK
+        filesystem: root
+        mode: 0644
+        path: /etc/chrony.conf
+----
+<1> Label to be applied on this MachineConfig
++
+So MachineConfig is the source of machine configuration and is used for installation and first-boot, as well as upgrades.
+Using the ignition config format, you can manage machines.
++
+But which component actually manage, the MC custom resources?
++
+* https://github.com/openshift/machine-config-operator[Machine Config Operator (MCO)]
++
+The Machine Config Operator (MCO) is a cluster-level operator. It manages the operating system and keeps the cluster up to date and configured.
+One way to view the MCO is to treat the operating system itself as "just another Kubernetes component" that you can inspect and manage with oc.
++
+[TIP]
+====
+Two Important keyword we need to remember
+
+* https://github.com/coreos/ignition[Ignition]: MCO uses CoreOS Ignition as a configuration format. see https://docs.openshift.com/container-platform/4.3/architecture/architecture-rhcos.html#rhcos-about-ignition_architecture-rhcos[About Ignition]
+* https://github.com/coreos/rpm-ostree[rpm-ostree]: Operating system updates use rpm-ostree, with ostree updates encapsulated inside a container image.
+====
++
+So if the MC is like a patch or OS file changes <<mc-definition,see Machine Config>>, then how MCO apply relevant patch to target machines (i.e masters is separated from workers).
+
+* Machine Config Pool
++
+The Machine Config Pool is the link between MC and target machines.
++
+Let’s examine the following sample to understand the Machine Config Pool.
++
+[source,yaml]
+----
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfigPool <1>
+metadata:
+  name: infra
+spec:
+  machineConfigSelector: <2>
+    matchExpressions:
+      - {key: machineconfiguration.openshift.io/role, operator: In, values: [worker,infra]}
+  nodeSelector: <3>
+    matchLabels:
+      node-role.kubernetes.io/infra: ""
+----
+<1> Declaration of the MachineConfigPool
+<2> Selector to select which Machine Config that will be applied on this pool <<mc-sample-yaml,see Machine Config>>.
+
+The Machine Config Pool maps between nodes and Machine Configs. The Machine Config Pool has two selectors, and each selector matches machine configs with nodes.
+Figure 1. The relationship among Machine Config Pool/Machine Configs and Worker Nodes
+
+
+
+
+The Render controller in the Machine Config Controller monitors the Machine Config Pool and generates static machine config objects named rendered-master-XXXX and rendered-worker-xxx. These objects can include multiple machine configs. The Render controller then checks whether the nodes in the pool have applied the latest rendered-xxxx machine config. If the machine config pool changes, then the render controller creates a new rendered-xxx and applies it.
+
+he MCO manages 3 sub-components. Here are links to design docs:
++
+* https://github.com/openshift/machine-config-operator[machine-config-server]
+* https://github.com/openshift/machine-config-operator[machine-config-controller]
+* https://github.com/openshift/machine-config-operator[machine-config-daemon]
+
+To do so, the MCO creates a statically rendered MachineConfig file which includes the MachineConfigs for each node. It then applies that configuration to each node. Let’s examine some of the details.
+machine-config-controller
+machine-config-daemon

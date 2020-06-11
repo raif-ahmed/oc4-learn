@@ -1,0 +1,19 @@
+:data-uri:
+:toc: left
+:markup-in-source: +verbatim,+quotes,+specialcharacters
+:source-highlighter: rouge
+:icons: font
+:stylesdir: stylesheets
+:stylesheet: colony.css
+
+= IBM Cloud, The OpenShift way
+The idea of this series is to understand the IBM Cloud echo system with respect to OpenShift
+
+:sectnums:
+
+== Deploy OCP to IBMCloud
+
+Bash script to deply OCP on IBM cloud (WIP convert it to ansible using https://github.com/IBM-Cloud/ansible-collection-ibm Looks pretty basic to me but maybe some help from IBM).
+
+* link:00_create_cluster.sh[]
+* link:01_delete_cluster.sh[]

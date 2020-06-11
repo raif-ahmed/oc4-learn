@@ -1,0 +1,1544 @@
+apiVersion: v1
+items:
+- apiVersion: extensions/v1beta1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "1"
+    creationTimestamp: "2020-04-30T09:19:55Z"
+    generation: 1
+    labels:
+      name: cluster-logging-operator
+      pod-template-hash: 784f87f859
+    name: cluster-logging-operator-784f87f859
+    namespace: openshift-logging
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: cluster-logging-operator
+      uid: 6c889933-8ac3-11ea-a13f-00505691b701
+    resourceVersion: "665626"
+    selfLink: /apis/extensions/v1beta1/namespaces/openshift-logging/replicasets/cluster-logging-operator-784f87f859
+    uid: c191f8ac-8ac3-11ea-a13f-00505691b701
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        name: cluster-logging-operator
+        pod-template-hash: 784f87f859
+    template:
+      metadata:
+        annotations:
+          alm-examples: |-
+            [
+                {
+                  "apiVersion": "logging.openshift.io/v1",
+                  "kind": "ClusterLogging",
+                  "metadata": {
+                    "name": "instance",
+                    "namespace": "openshift-logging"
+                   },
+                  "spec": {
+                    "managementState": "Managed",
+                    "logStore": {
+                      "type": "elasticsearch",
+                      "elasticsearch": {
+                        "nodeCount": 3,
+                        "redundancyPolicy": "SingleRedundancy",
+                        "storage": {
+                          "storageClassName": "gp2",
+                          "size": "200G"
+                         }
+                       }
+                    },
+                    "visualization": {
+                      "type": "kibana",
+                      "kibana": {
+                        "replicas": 1
+                      }
+                    },
+                    "curation": {
+                      "type": "curator",
+                      "curator": {
+                        "schedule": "30 3 * * *"
+                      }
+                    },
+                    "collection": {
+                      "logs": {
+                        "type": "fluentd",
+                        "fluentd": {}
+                      }
+                    }
+                  }
+                }
+            ]
+          capabilities: Seamless Upgrades
+          categories: OpenShift Optional, Logging & Tracing
+          certified: "false"
+          containerImage: registry.redhat.io/openshift4/ose-cluster-logging-operator@sha256:74caddfe7015c2661e19195ebee0273f3a7f0df27e86887855aabb81ba6675da
+          createdAt: "2018-08-01T08:00:00Z"
+          description: The Cluster Logging Operator for OKD provides a means for configuring
+            and managing your aggregated logging stack.
+          olm.operatorGroup: openshift-logging-zppj6
+          olm.operatorNamespace: openshift-logging
+          olm.skipRange: '>=4.1.0 <4.2.29-202004140532'
+          olm.targetNamespaces: openshift-logging
+          support: AOS Logging
+        creationTimestamp: null
+        labels:
+          name: cluster-logging-operator
+          pod-template-hash: 784f87f859
+      spec:
+        containers:
+        - command:
+          - cluster-logging-operator
+          env:
+          - name: WATCH_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.annotations['olm.targetNamespaces']
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: OPERATOR_NAME
+            value: cluster-logging-operator
+          - name: ELASTICSEARCH_IMAGE
+            value: registry.redhat.io/openshift4/ose-logging-elasticsearch5@sha256:e4cca1134b7213c8877ac6522fcad172e0f47eea799020eed25b90dc928af28e
+          - name: FLUENTD_IMAGE
+            value: registry.redhat.io/openshift4/ose-logging-fluentd@sha256:c996f464de52cf613e0613d7b4a86d6fd7e68015b2496fe8f5e19ac8f02ebe2c
+          - name: KIBANA_IMAGE
+            value: registry.redhat.io/openshift4/ose-logging-kibana5@sha256:d3af8ffe2c875f2129566e87ec67175a9c20956872ccb14792a330bf774d79d2
+          - name: CURATOR_IMAGE
+            value: registry.redhat.io/openshift4/ose-logging-curator5@sha256:ccd54b766ffa467e969709d2b859c379a6d9e8b022121fc57b7160adc0fbbb2a
+          - name: OAUTH_PROXY_IMAGE
+            value: registry.redhat.io/openshift4/ose-oauth-proxy@sha256:dc0fcd9252214037a45f15bdfdd703f47fd95e8f98895552bb6e7b2d205081c5
+          image: registry.redhat.io/openshift4/ose-cluster-logging-operator@sha256:74caddfe7015c2661e19195ebee0273f3a7f0df27e86887855aabb81ba6675da
+          imagePullPolicy: IfNotPresent
+          name: cluster-logging-operator
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: cluster-logging-operator
+        serviceAccountName: cluster-logging-operator
+        terminationGracePeriodSeconds: 30
+  status:
+    availableReplicas: 1
+    fullyLabeledReplicas: 1
+    observedGeneration: 1
+    readyReplicas: 1
+    replicas: 1
+- apiVersion: extensions/v1beta1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "1"
+      deployment.kubernetes.io/revision: "2"
+    creationTimestamp: "2020-04-30T09:52:17Z"
+    generation: 1
+    labels:
+      cluster-name: elasticsearch
+      component: elasticsearch
+      es-node-client: "true"
+      es-node-data: "true"
+      es-node-master: "true"
+      node-name: elasticsearch-cdm-xuj9u9vs-1
+      pod-template-hash: 5ccc5d54c9
+      tuned.openshift.io/elasticsearch: "true"
+    name: elasticsearch-cdm-xuj9u9vs-1-5ccc5d54c9
+    namespace: openshift-logging
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: elasticsearch-cdm-xuj9u9vs-1
+      uid: 18bcdfe3-8ac6-11ea-ae10-005056913ce7
+    resourceVersion: "676922"
+    selfLink: /apis/extensions/v1beta1/namespaces/openshift-logging/replicasets/elasticsearch-cdm-xuj9u9vs-1-5ccc5d54c9
+    uid: 471a157d-8ac8-11ea-a13f-00505691b701
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        cluster-name: elasticsearch
+        es-node-client: "true"
+        es-node-data: "true"
+        es-node-master: "true"
+        node-name: elasticsearch-cdm-xuj9u9vs-1
+        pod-template-hash: 5ccc5d54c9
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          cluster-name: elasticsearch
+          component: elasticsearch
+          es-node-client: "true"
+          es-node-data: "true"
+          es-node-master: "true"
+          node-name: elasticsearch-cdm-xuj9u9vs-1
+          pod-template-hash: 5ccc5d54c9
+          tuned.openshift.io/elasticsearch: "true"
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: es-node-client
+                    operator: In
+                    values:
+                    - "true"
+                  - key: es-node-data
+                    operator: In
+                    values:
+                    - "true"
+                  - key: es-node-master
+                    operator: In
+                    values:
+                    - "true"
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+        containers:
+        - env:
+          - name: DC_NAME
+            value: elasticsearch-cdm-xuj9u9vs-1
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: KUBERNETES_TRUST_CERT
+            value: "true"
+          - name: SERVICE_DNS
+            value: elasticsearch-cluster
+          - name: CLUSTER_NAME
+            value: elasticsearch
+          - name: INSTANCE_RAM
+            value: 16Gi
+          - name: HEAP_DUMP_LOCATION
+            value: /elasticsearch/persistent/heapdump.hprof
+          - name: RECOVER_AFTER_TIME
+            value: 5m
+          - name: READINESS_PROBE_TIMEOUT
+            value: "30"
+          - name: POD_LABEL
+            value: cluster=elasticsearch
+          - name: IS_MASTER
+            value: "true"
+          - name: HAS_DATA
+            value: "true"
+          image: registry.redhat.io/openshift4/ose-logging-elasticsearch5@sha256:e4cca1134b7213c8877ac6522fcad172e0f47eea799020eed25b90dc928af28e
+          imagePullPolicy: IfNotPresent
+          name: elasticsearch
+          ports:
+          - containerPort: 9300
+            name: cluster
+            protocol: TCP
+          - containerPort: 9200
+            name: restapi
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /usr/share/elasticsearch/probe/readiness.sh
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 30
+          resources:
+            limits:
+              memory: 16Gi
+            requests:
+              cpu: "1"
+              memory: 16Gi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /elasticsearch/persistent
+            name: elasticsearch-storage
+          - mountPath: /usr/share/java/elasticsearch/config
+            name: elasticsearch-config
+          - mountPath: /etc/openshift/elasticsearch/secret
+            name: certificates
+        - args:
+          - --https-address=:60000
+          - --provider=openshift
+          - --upstream=https://127.0.0.1:9200
+          - --tls-cert=/etc/proxy/secrets/tls.crt
+          - --tls-key=/etc/proxy/secrets/tls.key
+          - --upstream-ca=/etc/proxy/elasticsearch/admin-ca
+          - --openshift-service-account=elasticsearch
+          - '-openshift-sar={"resource": "namespaces", "verb": "get"}'
+          - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
+          - --pass-user-bearer-token
+          - --cookie-secret=/TVy+wz9wDcosbb2jNJmng==
+          image: registry.redhat.io/openshift4/ose-oauth-proxy@sha256:dc0fcd9252214037a45f15bdfdd703f47fd95e8f98895552bb6e7b2d205081c5
+          imagePullPolicy: IfNotPresent
+          name: proxy
+          ports:
+          - containerPort: 60000
+            name: metrics
+            protocol: TCP
+          resources:
+            limits:
+              memory: 64Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/proxy/secrets
+            name: elasticsearch-metrics
+          - mountPath: /etc/proxy/elasticsearch
+            name: certificates
+        dnsPolicy: ClusterFirst
+        nodeSelector:
+          kubernetes.io/os: linux
+          node-role.kubernetes.io/infra: ""
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: elasticsearch
+        serviceAccountName: elasticsearch
+        terminationGracePeriodSeconds: 30
+        tolerations:
+        - effect: NoSchedule
+          key: node.kubernetes.io/disk-pressure
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+        - effect: NoSchedule
+          operator: Exists
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: elasticsearch
+          name: elasticsearch-config
+        - name: elasticsearch-storage
+          persistentVolumeClaim:
+            claimName: elasticsearch-elasticsearch-cdm-xuj9u9vs-1
+        - name: certificates
+          secret:
+            defaultMode: 420
+            secretName: elasticsearch
+        - name: elasticsearch-metrics
+          secret:
+            defaultMode: 420
+            secretName: elasticsearch-metrics
+  status:
+    fullyLabeledReplicas: 1
+    observedGeneration: 1
+    replicas: 1
+- apiVersion: extensions/v1beta1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "1"
+      deployment.kubernetes.io/revision: "1"
+    creationTimestamp: "2020-04-30T09:36:41Z"
+    generation: 2
+    labels:
+      cluster-name: elasticsearch
+      component: elasticsearch
+      es-node-client: "true"
+      es-node-data: "true"
+      es-node-master: "true"
+      node-name: elasticsearch-cdm-xuj9u9vs-1
+      pod-template-hash: 6596978ff9
+      tuned.openshift.io/elasticsearch: "true"
+    name: elasticsearch-cdm-xuj9u9vs-1-6596978ff9
+    namespace: openshift-logging
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: elasticsearch-cdm-xuj9u9vs-1
+      uid: 18bcdfe3-8ac6-11ea-ae10-005056913ce7
+    resourceVersion: "676911"
+    selfLink: /apis/extensions/v1beta1/namespaces/openshift-logging/replicasets/elasticsearch-cdm-xuj9u9vs-1-6596978ff9
+    uid: 18c176d4-8ac6-11ea-a13f-00505691b701
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        cluster-name: elasticsearch
+        es-node-client: "true"
+        es-node-data: "true"
+        es-node-master: "true"
+        node-name: elasticsearch-cdm-xuj9u9vs-1
+        pod-template-hash: 6596978ff9
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          cluster-name: elasticsearch
+          component: elasticsearch
+          es-node-client: "true"
+          es-node-data: "true"
+          es-node-master: "true"
+          node-name: elasticsearch-cdm-xuj9u9vs-1
+          pod-template-hash: 6596978ff9
+          tuned.openshift.io/elasticsearch: "true"
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: es-node-client
+                    operator: In
+                    values:
+                    - "true"
+                  - key: es-node-data
+                    operator: In
+                    values:
+                    - "true"
+                  - key: es-node-master
+                    operator: In
+                    values:
+                    - "true"
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+        containers:
+        - env:
+          - name: DC_NAME
+            value: elasticsearch-cdm-xuj9u9vs-1
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: KUBERNETES_TRUST_CERT
+            value: "true"
+          - name: SERVICE_DNS
+            value: elasticsearch-cluster
+          - name: CLUSTER_NAME
+            value: elasticsearch
+          - name: INSTANCE_RAM
+            value: 16Gi
+          - name: HEAP_DUMP_LOCATION
+            value: /elasticsearch/persistent/heapdump.hprof
+          - name: RECOVER_AFTER_TIME
+            value: 5m
+          - name: READINESS_PROBE_TIMEOUT
+            value: "30"
+          - name: POD_LABEL
+            value: cluster=elasticsearch
+          - name: IS_MASTER
+            value: "true"
+          - name: HAS_DATA
+            value: "true"
+          image: registry.redhat.io/openshift4/ose-logging-elasticsearch5@sha256:e4cca1134b7213c8877ac6522fcad172e0f47eea799020eed25b90dc928af28e
+          imagePullPolicy: IfNotPresent
+          name: elasticsearch
+          ports:
+          - containerPort: 9300
+            name: cluster
+            protocol: TCP
+          - containerPort: 9200
+            name: restapi
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /usr/share/elasticsearch/probe/readiness.sh
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 30
+          resources:
+            limits:
+              memory: 16Gi
+            requests:
+              cpu: "1"
+              memory: 16Gi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /elasticsearch/persistent
+            name: elasticsearch-storage
+          - mountPath: /usr/share/java/elasticsearch/config
+            name: elasticsearch-config
+          - mountPath: /etc/openshift/elasticsearch/secret
+            name: certificates
+        - args:
+          - --https-address=:60000
+          - --provider=openshift
+          - --upstream=https://127.0.0.1:9200
+          - --tls-cert=/etc/proxy/secrets/tls.crt
+          - --tls-key=/etc/proxy/secrets/tls.key
+          - --upstream-ca=/etc/proxy/elasticsearch/admin-ca
+          - --openshift-service-account=elasticsearch
+          - '-openshift-sar={"resource": "namespaces", "verb": "get"}'
+          - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
+          - --pass-user-bearer-token
+          - --cookie-secret=/TVy+wz9wDcosbb2jNJmng==
+          image: registry.redhat.io/openshift4/ose-oauth-proxy@sha256:dc0fcd9252214037a45f15bdfdd703f47fd95e8f98895552bb6e7b2d205081c5
+          imagePullPolicy: IfNotPresent
+          name: proxy
+          ports:
+          - containerPort: 60000
+            name: metrics
+            protocol: TCP
+          resources:
+            limits:
+              memory: 64Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/proxy/secrets
+            name: elasticsearch-metrics
+          - mountPath: /etc/proxy/elasticsearch
+            name: certificates
+        dnsPolicy: ClusterFirst
+        nodeSelector:
+          kubernetes.io/os: linux
+          node-role.kubernetes.io/infra: ""
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: elasticsearch
+        serviceAccountName: elasticsearch
+        terminationGracePeriodSeconds: 30
+        tolerations:
+        - effect: NoSchedule
+          key: node.kubernetes.io/disk-pressure
+          operator: Exists
+        - effect: NoExecute
+          key: infra
+          operator: Equal
+          value: reserved
+        - effect: NoSchedule
+          key: infra
+          operator: Equal
+          value: reserved
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: elasticsearch
+          name: elasticsearch-config
+        - name: elasticsearch-storage
+          persistentVolumeClaim:
+            claimName: elasticsearch-elasticsearch-cdm-xuj9u9vs-1
+        - name: certificates
+          secret:
+            defaultMode: 420
+            secretName: elasticsearch
+        - name: elasticsearch-metrics
+          secret:
+            defaultMode: 420
+            secretName: elasticsearch-metrics
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: extensions/v1beta1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "1"
+      deployment.kubernetes.io/revision: "2"
+    creationTimestamp: "2020-04-30T09:52:18Z"
+    generation: 1
+    labels:
+      cluster-name: elasticsearch
+      component: elasticsearch
+      es-node-client: "true"
+      es-node-data: "true"
+      es-node-master: "true"
+      node-name: elasticsearch-cdm-xuj9u9vs-2
+      pod-template-hash: 67746d9484
+      tuned.openshift.io/elasticsearch: "true"
+    name: elasticsearch-cdm-xuj9u9vs-2-67746d9484
+    namespace: openshift-logging
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: elasticsearch-cdm-xuj9u9vs-2
+      uid: 2c39d2f9-8ac6-11ea-ae10-005056913ce7
+    resourceVersion: "676960"
+    selfLink: /apis/extensions/v1beta1/namespaces/openshift-logging/replicasets/elasticsearch-cdm-xuj9u9vs-2-67746d9484
+    uid: 47b763dc-8ac8-11ea-a13f-00505691b701
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        cluster-name: elasticsearch
+        es-node-client: "true"
+        es-node-data: "true"
+        es-node-master: "true"
+        node-name: elasticsearch-cdm-xuj9u9vs-2
+        pod-template-hash: 67746d9484
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          cluster-name: elasticsearch
+          component: elasticsearch
+          es-node-client: "true"
+          es-node-data: "true"
+          es-node-master: "true"
+          node-name: elasticsearch-cdm-xuj9u9vs-2
+          pod-template-hash: 67746d9484
+          tuned.openshift.io/elasticsearch: "true"
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: es-node-client
+                    operator: In
+                    values:
+                    - "true"
+                  - key: es-node-data
+                    operator: In
+                    values:
+                    - "true"
+                  - key: es-node-master
+                    operator: In
+                    values:
+                    - "true"
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+        containers:
+        - env:
+          - name: DC_NAME
+            value: elasticsearch-cdm-xuj9u9vs-2
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: KUBERNETES_TRUST_CERT
+            value: "true"
+          - name: SERVICE_DNS
+            value: elasticsearch-cluster
+          - name: CLUSTER_NAME
+            value: elasticsearch
+          - name: INSTANCE_RAM
+            value: 16Gi
+          - name: HEAP_DUMP_LOCATION
+            value: /elasticsearch/persistent/heapdump.hprof
+          - name: RECOVER_AFTER_TIME
+            value: 5m
+          - name: READINESS_PROBE_TIMEOUT
+            value: "30"
+          - name: POD_LABEL
+            value: cluster=elasticsearch
+          - name: IS_MASTER
+            value: "true"
+          - name: HAS_DATA
+            value: "true"
+          image: registry.redhat.io/openshift4/ose-logging-elasticsearch5@sha256:e4cca1134b7213c8877ac6522fcad172e0f47eea799020eed25b90dc928af28e
+          imagePullPolicy: IfNotPresent
+          name: elasticsearch
+          ports:
+          - containerPort: 9300
+            name: cluster
+            protocol: TCP
+          - containerPort: 9200
+            name: restapi
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /usr/share/elasticsearch/probe/readiness.sh
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 30
+          resources:
+            limits:
+              memory: 16Gi
+            requests:
+              cpu: "1"
+              memory: 16Gi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /elasticsearch/persistent
+            name: elasticsearch-storage
+          - mountPath: /usr/share/java/elasticsearch/config
+            name: elasticsearch-config
+          - mountPath: /etc/openshift/elasticsearch/secret
+            name: certificates
+        - args:
+          - --https-address=:60000
+          - --provider=openshift
+          - --upstream=https://127.0.0.1:9200
+          - --tls-cert=/etc/proxy/secrets/tls.crt
+          - --tls-key=/etc/proxy/secrets/tls.key
+          - --upstream-ca=/etc/proxy/elasticsearch/admin-ca
+          - --openshift-service-account=elasticsearch
+          - '-openshift-sar={"resource": "namespaces", "verb": "get"}'
+          - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
+          - --pass-user-bearer-token
+          - --cookie-secret=6g86uy+37AwlH5UkZTBiZA==
+          image: registry.redhat.io/openshift4/ose-oauth-proxy@sha256:dc0fcd9252214037a45f15bdfdd703f47fd95e8f98895552bb6e7b2d205081c5
+          imagePullPolicy: IfNotPresent
+          name: proxy
+          ports:
+          - containerPort: 60000
+            name: metrics
+            protocol: TCP
+          resources:
+            limits:
+              memory: 64Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/proxy/secrets
+            name: elasticsearch-metrics
+          - mountPath: /etc/proxy/elasticsearch
+            name: certificates
+        dnsPolicy: ClusterFirst
+        nodeSelector:
+          kubernetes.io/os: linux
+          node-role.kubernetes.io/infra: ""
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: elasticsearch
+        serviceAccountName: elasticsearch
+        terminationGracePeriodSeconds: 30
+        tolerations:
+        - effect: NoSchedule
+          key: node.kubernetes.io/disk-pressure
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+        - effect: NoSchedule
+          operator: Exists
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: elasticsearch
+          name: elasticsearch-config
+        - name: elasticsearch-storage
+          persistentVolumeClaim:
+            claimName: elasticsearch-elasticsearch-cdm-xuj9u9vs-2
+        - name: certificates
+          secret:
+            defaultMode: 420
+            secretName: elasticsearch
+        - name: elasticsearch-metrics
+          secret:
+            defaultMode: 420
+            secretName: elasticsearch-metrics
+  status:
+    fullyLabeledReplicas: 1
+    observedGeneration: 1
+    replicas: 1
+- apiVersion: extensions/v1beta1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "1"
+      deployment.kubernetes.io/revision: "1"
+    creationTimestamp: "2020-04-30T09:37:13Z"
+    generation: 2
+    labels:
+      cluster-name: elasticsearch
+      component: elasticsearch
+      es-node-client: "true"
+      es-node-data: "true"
+      es-node-master: "true"
+      node-name: elasticsearch-cdm-xuj9u9vs-2
+      pod-template-hash: 7c8f6f964
+      tuned.openshift.io/elasticsearch: "true"
+    name: elasticsearch-cdm-xuj9u9vs-2-7c8f6f964
+    namespace: openshift-logging
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: elasticsearch-cdm-xuj9u9vs-2
+      uid: 2c39d2f9-8ac6-11ea-ae10-005056913ce7
+    resourceVersion: "676952"
+    selfLink: /apis/extensions/v1beta1/namespaces/openshift-logging/replicasets/elasticsearch-cdm-xuj9u9vs-2-7c8f6f964
+    uid: 2c3b8042-8ac6-11ea-a13f-00505691b701
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        cluster-name: elasticsearch
+        es-node-client: "true"
+        es-node-data: "true"
+        es-node-master: "true"
+        node-name: elasticsearch-cdm-xuj9u9vs-2
+        pod-template-hash: 7c8f6f964
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          cluster-name: elasticsearch
+          component: elasticsearch
+          es-node-client: "true"
+          es-node-data: "true"
+          es-node-master: "true"
+          node-name: elasticsearch-cdm-xuj9u9vs-2
+          pod-template-hash: 7c8f6f964
+          tuned.openshift.io/elasticsearch: "true"
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: es-node-client
+                    operator: In
+                    values:
+                    - "true"
+                  - key: es-node-data
+                    operator: In
+                    values:
+                    - "true"
+                  - key: es-node-master
+                    operator: In
+                    values:
+                    - "true"
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+        containers:
+        - env:
+          - name: DC_NAME
+            value: elasticsearch-cdm-xuj9u9vs-2
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: KUBERNETES_TRUST_CERT
+            value: "true"
+          - name: SERVICE_DNS
+            value: elasticsearch-cluster
+          - name: CLUSTER_NAME
+            value: elasticsearch
+          - name: INSTANCE_RAM
+            value: 16Gi
+          - name: HEAP_DUMP_LOCATION
+            value: /elasticsearch/persistent/heapdump.hprof
+          - name: RECOVER_AFTER_TIME
+            value: 5m
+          - name: READINESS_PROBE_TIMEOUT
+            value: "30"
+          - name: POD_LABEL
+            value: cluster=elasticsearch
+          - name: IS_MASTER
+            value: "true"
+          - name: HAS_DATA
+            value: "true"
+          image: registry.redhat.io/openshift4/ose-logging-elasticsearch5@sha256:e4cca1134b7213c8877ac6522fcad172e0f47eea799020eed25b90dc928af28e
+          imagePullPolicy: IfNotPresent
+          name: elasticsearch
+          ports:
+          - containerPort: 9300
+            name: cluster
+            protocol: TCP
+          - containerPort: 9200
+            name: restapi
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /usr/share/elasticsearch/probe/readiness.sh
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 30
+          resources:
+            limits:
+              memory: 16Gi
+            requests:
+              cpu: "1"
+              memory: 16Gi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /elasticsearch/persistent
+            name: elasticsearch-storage
+          - mountPath: /usr/share/java/elasticsearch/config
+            name: elasticsearch-config
+          - mountPath: /etc/openshift/elasticsearch/secret
+            name: certificates
+        - args:
+          - --https-address=:60000
+          - --provider=openshift
+          - --upstream=https://127.0.0.1:9200
+          - --tls-cert=/etc/proxy/secrets/tls.crt
+          - --tls-key=/etc/proxy/secrets/tls.key
+          - --upstream-ca=/etc/proxy/elasticsearch/admin-ca
+          - --openshift-service-account=elasticsearch
+          - '-openshift-sar={"resource": "namespaces", "verb": "get"}'
+          - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
+          - --pass-user-bearer-token
+          - --cookie-secret=6g86uy+37AwlH5UkZTBiZA==
+          image: registry.redhat.io/openshift4/ose-oauth-proxy@sha256:dc0fcd9252214037a45f15bdfdd703f47fd95e8f98895552bb6e7b2d205081c5
+          imagePullPolicy: IfNotPresent
+          name: proxy
+          ports:
+          - containerPort: 60000
+            name: metrics
+            protocol: TCP
+          resources:
+            limits:
+              memory: 64Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/proxy/secrets
+            name: elasticsearch-metrics
+          - mountPath: /etc/proxy/elasticsearch
+            name: certificates
+        dnsPolicy: ClusterFirst
+        nodeSelector:
+          kubernetes.io/os: linux
+          node-role.kubernetes.io/infra: ""
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: elasticsearch
+        serviceAccountName: elasticsearch
+        terminationGracePeriodSeconds: 30
+        tolerations:
+        - effect: NoSchedule
+          key: node.kubernetes.io/disk-pressure
+          operator: Exists
+        - effect: NoExecute
+          key: infra
+          operator: Equal
+          value: reserved
+        - effect: NoSchedule
+          key: infra
+          operator: Equal
+          value: reserved
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: elasticsearch
+          name: elasticsearch-config
+        - name: elasticsearch-storage
+          persistentVolumeClaim:
+            claimName: elasticsearch-elasticsearch-cdm-xuj9u9vs-2
+        - name: certificates
+          secret:
+            defaultMode: 420
+            secretName: elasticsearch
+        - name: elasticsearch-metrics
+          secret:
+            defaultMode: 420
+            secretName: elasticsearch-metrics
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: extensions/v1beta1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "1"
+      deployment.kubernetes.io/revision: "1"
+    creationTimestamp: "2020-04-30T09:37:46Z"
+    generation: 2
+    labels:
+      cluster-name: elasticsearch
+      component: elasticsearch
+      es-node-client: "true"
+      es-node-data: "true"
+      es-node-master: "true"
+      node-name: elasticsearch-cdm-xuj9u9vs-3
+      pod-template-hash: 687667659b
+      tuned.openshift.io/elasticsearch: "true"
+    name: elasticsearch-cdm-xuj9u9vs-3-687667659b
+    namespace: openshift-logging
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: elasticsearch-cdm-xuj9u9vs-3
+      uid: 3f5dd73e-8ac6-11ea-ae10-005056913ce7
+    resourceVersion: "676989"
+    selfLink: /apis/extensions/v1beta1/namespaces/openshift-logging/replicasets/elasticsearch-cdm-xuj9u9vs-3-687667659b
+    uid: 3f6c2a88-8ac6-11ea-a13f-00505691b701
+  spec:
+    replicas: 0
+    selector:
+      matchLabels:
+        cluster-name: elasticsearch
+        es-node-client: "true"
+        es-node-data: "true"
+        es-node-master: "true"
+        node-name: elasticsearch-cdm-xuj9u9vs-3
+        pod-template-hash: 687667659b
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          cluster-name: elasticsearch
+          component: elasticsearch
+          es-node-client: "true"
+          es-node-data: "true"
+          es-node-master: "true"
+          node-name: elasticsearch-cdm-xuj9u9vs-3
+          pod-template-hash: 687667659b
+          tuned.openshift.io/elasticsearch: "true"
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: es-node-client
+                    operator: In
+                    values:
+                    - "true"
+                  - key: es-node-data
+                    operator: In
+                    values:
+                    - "true"
+                  - key: es-node-master
+                    operator: In
+                    values:
+                    - "true"
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+        containers:
+        - env:
+          - name: DC_NAME
+            value: elasticsearch-cdm-xuj9u9vs-3
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: KUBERNETES_TRUST_CERT
+            value: "true"
+          - name: SERVICE_DNS
+            value: elasticsearch-cluster
+          - name: CLUSTER_NAME
+            value: elasticsearch
+          - name: INSTANCE_RAM
+            value: 16Gi
+          - name: HEAP_DUMP_LOCATION
+            value: /elasticsearch/persistent/heapdump.hprof
+          - name: RECOVER_AFTER_TIME
+            value: 5m
+          - name: READINESS_PROBE_TIMEOUT
+            value: "30"
+          - name: POD_LABEL
+            value: cluster=elasticsearch
+          - name: IS_MASTER
+            value: "true"
+          - name: HAS_DATA
+            value: "true"
+          image: registry.redhat.io/openshift4/ose-logging-elasticsearch5@sha256:e4cca1134b7213c8877ac6522fcad172e0f47eea799020eed25b90dc928af28e
+          imagePullPolicy: IfNotPresent
+          name: elasticsearch
+          ports:
+          - containerPort: 9300
+            name: cluster
+            protocol: TCP
+          - containerPort: 9200
+            name: restapi
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /usr/share/elasticsearch/probe/readiness.sh
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 30
+          resources:
+            limits:
+              memory: 16Gi
+            requests:
+              cpu: "1"
+              memory: 16Gi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /elasticsearch/persistent
+            name: elasticsearch-storage
+          - mountPath: /usr/share/java/elasticsearch/config
+            name: elasticsearch-config
+          - mountPath: /etc/openshift/elasticsearch/secret
+            name: certificates
+        - args:
+          - --https-address=:60000
+          - --provider=openshift
+          - --upstream=https://127.0.0.1:9200
+          - --tls-cert=/etc/proxy/secrets/tls.crt
+          - --tls-key=/etc/proxy/secrets/tls.key
+          - --upstream-ca=/etc/proxy/elasticsearch/admin-ca
+          - --openshift-service-account=elasticsearch
+          - '-openshift-sar={"resource": "namespaces", "verb": "get"}'
+          - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
+          - --pass-user-bearer-token
+          - --cookie-secret=qr4pwZssBaxxT9hLlXAzRw==
+          image: registry.redhat.io/openshift4/ose-oauth-proxy@sha256:dc0fcd9252214037a45f15bdfdd703f47fd95e8f98895552bb6e7b2d205081c5
+          imagePullPolicy: IfNotPresent
+          name: proxy
+          ports:
+          - containerPort: 60000
+            name: metrics
+            protocol: TCP
+          resources:
+            limits:
+              memory: 64Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/proxy/secrets
+            name: elasticsearch-metrics
+          - mountPath: /etc/proxy/elasticsearch
+            name: certificates
+        dnsPolicy: ClusterFirst
+        nodeSelector:
+          kubernetes.io/os: linux
+          node-role.kubernetes.io/infra: ""
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: elasticsearch
+        serviceAccountName: elasticsearch
+        terminationGracePeriodSeconds: 30
+        tolerations:
+        - effect: NoSchedule
+          key: node.kubernetes.io/disk-pressure
+          operator: Exists
+        - effect: NoExecute
+          key: infra
+          operator: Equal
+          value: reserved
+        - effect: NoSchedule
+          key: infra
+          operator: Equal
+          value: reserved
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: elasticsearch
+          name: elasticsearch-config
+        - name: elasticsearch-storage
+          persistentVolumeClaim:
+            claimName: elasticsearch-elasticsearch-cdm-xuj9u9vs-3
+        - name: certificates
+          secret:
+            defaultMode: 420
+            secretName: elasticsearch
+        - name: elasticsearch-metrics
+          secret:
+            defaultMode: 420
+            secretName: elasticsearch-metrics
+  status:
+    observedGeneration: 2
+    replicas: 0
+- apiVersion: extensions/v1beta1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "1"
+      deployment.kubernetes.io/revision: "2"
+    creationTimestamp: "2020-04-30T09:52:19Z"
+    generation: 1
+    labels:
+      cluster-name: elasticsearch
+      component: elasticsearch
+      es-node-client: "true"
+      es-node-data: "true"
+      es-node-master: "true"
+      node-name: elasticsearch-cdm-xuj9u9vs-3
+      pod-template-hash: 77677fcc84
+      tuned.openshift.io/elasticsearch: "true"
+    name: elasticsearch-cdm-xuj9u9vs-3-77677fcc84
+    namespace: openshift-logging
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: elasticsearch-cdm-xuj9u9vs-3
+      uid: 3f5dd73e-8ac6-11ea-ae10-005056913ce7
+    resourceVersion: "676996"
+    selfLink: /apis/extensions/v1beta1/namespaces/openshift-logging/replicasets/elasticsearch-cdm-xuj9u9vs-3-77677fcc84
+    uid: 4855a81f-8ac8-11ea-a13f-00505691b701
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        cluster-name: elasticsearch
+        es-node-client: "true"
+        es-node-data: "true"
+        es-node-master: "true"
+        node-name: elasticsearch-cdm-xuj9u9vs-3
+        pod-template-hash: 77677fcc84
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          cluster-name: elasticsearch
+          component: elasticsearch
+          es-node-client: "true"
+          es-node-data: "true"
+          es-node-master: "true"
+          node-name: elasticsearch-cdm-xuj9u9vs-3
+          pod-template-hash: 77677fcc84
+          tuned.openshift.io/elasticsearch: "true"
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: es-node-client
+                    operator: In
+                    values:
+                    - "true"
+                  - key: es-node-data
+                    operator: In
+                    values:
+                    - "true"
+                  - key: es-node-master
+                    operator: In
+                    values:
+                    - "true"
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+        containers:
+        - env:
+          - name: DC_NAME
+            value: elasticsearch-cdm-xuj9u9vs-3
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: KUBERNETES_TRUST_CERT
+            value: "true"
+          - name: SERVICE_DNS
+            value: elasticsearch-cluster
+          - name: CLUSTER_NAME
+            value: elasticsearch
+          - name: INSTANCE_RAM
+            value: 16Gi
+          - name: HEAP_DUMP_LOCATION
+            value: /elasticsearch/persistent/heapdump.hprof
+          - name: RECOVER_AFTER_TIME
+            value: 5m
+          - name: READINESS_PROBE_TIMEOUT
+            value: "30"
+          - name: POD_LABEL
+            value: cluster=elasticsearch
+          - name: IS_MASTER
+            value: "true"
+          - name: HAS_DATA
+            value: "true"
+          image: registry.redhat.io/openshift4/ose-logging-elasticsearch5@sha256:e4cca1134b7213c8877ac6522fcad172e0f47eea799020eed25b90dc928af28e
+          imagePullPolicy: IfNotPresent
+          name: elasticsearch
+          ports:
+          - containerPort: 9300
+            name: cluster
+            protocol: TCP
+          - containerPort: 9200
+            name: restapi
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /usr/share/elasticsearch/probe/readiness.sh
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 30
+          resources:
+            limits:
+              memory: 16Gi
+            requests:
+              cpu: "1"
+              memory: 16Gi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /elasticsearch/persistent
+            name: elasticsearch-storage
+          - mountPath: /usr/share/java/elasticsearch/config
+            name: elasticsearch-config
+          - mountPath: /etc/openshift/elasticsearch/secret
+            name: certificates
+        - args:
+          - --https-address=:60000
+          - --provider=openshift
+          - --upstream=https://127.0.0.1:9200
+          - --tls-cert=/etc/proxy/secrets/tls.crt
+          - --tls-key=/etc/proxy/secrets/tls.key
+          - --upstream-ca=/etc/proxy/elasticsearch/admin-ca
+          - --openshift-service-account=elasticsearch
+          - '-openshift-sar={"resource": "namespaces", "verb": "get"}'
+          - '-openshift-delegate-urls={"/": {"resource": "namespaces", "verb": "get"}}'
+          - --pass-user-bearer-token
+          - --cookie-secret=qr4pwZssBaxxT9hLlXAzRw==
+          image: registry.redhat.io/openshift4/ose-oauth-proxy@sha256:dc0fcd9252214037a45f15bdfdd703f47fd95e8f98895552bb6e7b2d205081c5
+          imagePullPolicy: IfNotPresent
+          name: proxy
+          ports:
+          - containerPort: 60000
+            name: metrics
+            protocol: TCP
+          resources:
+            limits:
+              memory: 64Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/proxy/secrets
+            name: elasticsearch-metrics
+          - mountPath: /etc/proxy/elasticsearch
+            name: certificates
+        dnsPolicy: ClusterFirst
+        nodeSelector:
+          kubernetes.io/os: linux
+          node-role.kubernetes.io/infra: ""
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: elasticsearch
+        serviceAccountName: elasticsearch
+        terminationGracePeriodSeconds: 30
+        tolerations:
+        - effect: NoSchedule
+          key: node.kubernetes.io/disk-pressure
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+        - effect: NoSchedule
+          operator: Exists
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: elasticsearch
+          name: elasticsearch-config
+        - name: elasticsearch-storage
+          persistentVolumeClaim:
+            claimName: elasticsearch-elasticsearch-cdm-xuj9u9vs-3
+        - name: certificates
+          secret:
+            defaultMode: 420
+            secretName: elasticsearch
+        - name: elasticsearch-metrics
+          secret:
+            defaultMode: 420
+            secretName: elasticsearch-metrics
+  status:
+    fullyLabeledReplicas: 1
+    observedGeneration: 1
+    replicas: 1
+- apiVersion: extensions/v1beta1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "1"
+      deployment.kubernetes.io/max-replicas: "2"
+      deployment.kubernetes.io/revision: "1"
+    creationTimestamp: "2020-04-30T09:36:41Z"
+    generation: 1
+    labels:
+      component: kibana
+      logging-infra: kibana
+      pod-template-hash: 6547bcb88b
+      provider: openshift
+    name: kibana-6547bcb88b
+    namespace: openshift-logging
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: kibana
+      uid: 18cdab56-8ac6-11ea-8b31-005056912088
+    resourceVersion: "672024"
+    selfLink: /apis/extensions/v1beta1/namespaces/openshift-logging/replicasets/kibana-6547bcb88b
+    uid: 18d3f711-8ac6-11ea-a13f-00505691b701
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        component: kibana
+        logging-infra: kibana
+        pod-template-hash: 6547bcb88b
+        provider: openshift
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          component: kibana
+          logging-infra: kibana
+          pod-template-hash: 6547bcb88b
+          provider: openshift
+        name: kibana
+      spec:
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: logging-infra
+                    operator: In
+                    values:
+                    - kibana
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+        containers:
+        - env:
+          - name: ELASTICSEARCH_URL
+            value: https://elasticsearch:9200
+          - name: KIBANA_MEMORY_LIMIT
+            valueFrom:
+              resourceFieldRef:
+                containerName: kibana
+                divisor: "0"
+                resource: limits.memory
+          image: registry.redhat.io/openshift4/ose-logging-kibana5@sha256:d3af8ffe2c875f2129566e87ec67175a9c20956872ccb14792a330bf774d79d2
+          imagePullPolicy: IfNotPresent
+          name: kibana
+          readinessProbe:
+            exec:
+              command:
+              - /usr/share/kibana/probe/readiness.sh
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 4
+          resources:
+            limits:
+              memory: 736Mi
+            requests:
+              cpu: 100m
+              memory: 736Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/kibana/keys
+            name: kibana
+            readOnly: true
+        - args:
+          - --upstream-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          - --https-address=:3000
+          - -provider=openshift
+          - -client-id=system:serviceaccount:openshift-logging:kibana
+          - -client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token
+          - -cookie-secret-file=/secret/session-secret
+          - -upstream=http://localhost:5601
+          - -scope=user:info user:check-access user:list-projects
+          - --tls-cert=/secret/server-cert
+          - -tls-key=/secret/server-key
+          - -pass-access-token
+          - -skip-provider-button
+          env:
+          - name: OAP_DEBUG
+            value: "false"
+          - name: OCP_AUTH_PROXY_MEMORY_LIMIT
+            valueFrom:
+              resourceFieldRef:
+                containerName: kibana-proxy
+                divisor: "0"
+                resource: limits.memory
+          image: registry.redhat.io/openshift4/ose-oauth-proxy@sha256:dc0fcd9252214037a45f15bdfdd703f47fd95e8f98895552bb6e7b2d205081c5
+          imagePullPolicy: IfNotPresent
+          name: kibana-proxy
+          ports:
+          - containerPort: 3000
+            name: oaproxy
+            protocol: TCP
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /secret
+            name: kibana-proxy
+            readOnly: true
+        dnsPolicy: ClusterFirst
+        nodeSelector:
+          kubernetes.io/os: linux
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: kibana
+        serviceAccountName: kibana
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: kibana
+          secret:
+            defaultMode: 420
+            secretName: kibana
+        - name: kibana-proxy
+          secret:
+            defaultMode: 420
+            secretName: kibana-proxy
+  status:
+    availableReplicas: 1
+    fullyLabeledReplicas: 1
+    observedGeneration: 1
+    readyReplicas: 1
+    replicas: 1
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""

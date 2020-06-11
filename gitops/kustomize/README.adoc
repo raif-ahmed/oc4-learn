@@ -1,0 +1,60 @@
+= Manage API Objects, using Kustomize
+
+The idea of
+
+.References :
+** https://github.com/kubernetes-sigs/kustomize[]
+** https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization[]
+
+:sectnums:
+
+== What is Kustomize?
+The main idea of kustomize, is that it enable you to "customize", standard yaml file (API Object definition).
+So assume you have a deployment.yaml (Deployment Object) kustomize allow you to alter namespace, images, labels, etc..
+Another use of Kustomize is that it allows you to creating a file that glues everything together, or even create a hierarchical relationship to “overrides” parent parameters.
+
+== Deploy ArgoCD Operator
+I will use ArgoCD operator deployment as the way for exploring and explaining kustomize.
+
+. kustomization.yaml
++
+The main file where you define all your resources, so in the kustomization file we mention all resources, namespace that will include those resources, and a variable to be referenced in resources files.
++
+[source,yaml]
+----
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: argocd
+commonLabels:
+  app: argocd-operator
+resources:
+- argocd-namespace.yaml
+- argocd-operatorgroup.yaml
+- argocd-subscription.yaml
+vars:
+- name: ARGOCD_PROJECT_NAME
+  objref:
+    kind: Namespace
+    name: argocd
+    apiVersion: v1
+----
++
+. folder Structure
++
+image::images/folder.png[width=300,height=380]
++
+* base
++
+A base is main folder where you put your main kustomization file, in our case we include the all resources in this file.
+* overlay
++
+An overlay is a kustomization that depends on another kustomization (normally the base).
+So you will need a separate overlay for every specific targeted configuration, imagine the case where you will have a dev, prod, etc.
+or in our case we have aws, and ibmcloud.
++
+. Apply the kustomization
+
+[source,bash]
+----
+oc apply -k overlays/ibmcloud
+----

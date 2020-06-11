@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dev-kubernetes-external-secrets
+spec:
+  template:
+    spec:
+      containers:
+        - name: kubernetes-external-secrets
+          env:
+          - name: "AWS_ACCESS_KEY_ID"
+            value: "ACCESS_KEY_ID"
+          - name: "AWS_SECRET_ACCESS_KEY"
+            value: "SECRET_ACCESS_KEY"
+          - name: "AWS_DEFAULT_REGION"
+            value: "us-east-1"
+          - name: "AWS_REGION"
+            value: "us-east-1"

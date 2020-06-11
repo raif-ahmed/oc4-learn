@@ -1,0 +1,32 @@
+Removing a custom pool
+Removing a custom pool requires first to un-label each node:
+
+$ oc label node ip-10-0-130-218.us-west-1.compute.internal node-role.kubernetes.io/infra-
+$ oc get nodes
+NAME                                         STATUS   ROLES    AGE   VERSION
+ip-10-0-130-218.us-west-1.compute.internal   Ready    worker   50m   v1.14.0+e020ea5b3
+ip-10-0-131-9.us-west-1.compute.internal     Ready    master   56m   v1.14.0+e020ea5b3
+ip-10-0-134-237.us-west-1.compute.internal   Ready    master   56m   v1.14.0+e020ea5b3
+ip-10-0-138-167.us-west-1.compute.internal   Ready    worker   50m   v1.14.0+e020ea5b3
+ip-10-0-151-146.us-west-1.compute.internal   Ready    master   56m   v1.14.0+e020ea5b3
+ip-10-0-152-59.us-west-1.compute.internal    Ready    worker   50m   v1.14.0+e020ea5b3
+The MCO is then going to reconcile the node to the worker pool configuration.
+
+$ oc get mcp
+NAME     CONFIG                                             UPDATED   UPDATING   DEGRADED
+infra    rendered-infra-dfdfdf7e006f18cd5d29cae03f77948b    True      False      False
+master   rendered-master-7053d8fc3619388accc12c7759f8241a   True      False      False
+worker   rendered-worker-6db67f47c0b205c26561b1c5ab74d79b   False     True       False
+As soon as the worker pool reconciles, you can remove the infra MCP and any MC created.
+
+$ oc get mcp
+NAME     CONFIG                                             UPDATED   UPDATING   DEGRADED
+infra    rendered-infra-dfdfdf7e006f18cd5d29cae03f77948b    True      False      False
+master   rendered-master-7053d8fc3619388accc12c7759f8241a   True      False      False
+worker   rendered-worker-6db67f47c0b205c26561b1c5ab74d79b   True      False      False
+
+$ oc delete mc 51-infra
+machineconfig.machineconfiguration.openshift.io "51-infra" deleted
+
+$ oc delete mcp infra
+machineconfigpool.machineconfiguration.openshift.io "infra" deleted

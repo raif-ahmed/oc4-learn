@@ -1,0 +1,22 @@
+To see attributes
+oc explain configs.spec
+
+
+To enable defaultRoute to create an external facing route for the registry using the default generated hostname.
+oc patch configs.imageregistry.operator.openshift.io/cluster --type merge -p '{"spec":{"defaultRoute":true}}'
+
+For pulling images
+oc policy add-role-to-user registry-viewer <user_name>
+
+For writing or pushing images
+oc policy add-role-to-user registry-editor <user_name>
+
+
+HOST=$(oc get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
+podman login -u $(oc whoami) -p $(oc whoami -t) --tls-verify=false $HOST
+
+
+
+Configuring storage credentials for the Image Registry Operator
+
+oc create secret generic image-registry-private-configuration-user --from-file=KEY1=value1 --from-literal=KEY2=value2 --namespace openshift-image-registry

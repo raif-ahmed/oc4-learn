@@ -1,0 +1,12 @@
+apiVersion: "project.openshift.io/v1"
+kind: Project
+metadata:
+  annotations:
+    openshift.io/description: "Project to run Cluster Logging and ElasticSearch Operators"
+    scheduler.alpha.kubernetes.io/defaultTolerations: '[{"Key": "infra", "Operator":"Equal", "Value": "reserved", "effect": "NoSchedule"},{"effect":"NoExecute","key":"infra","value":"reserved", "Operator":"Equal"}]'
+  name: openshift-operators-redhat 
+  labels:
+    openshift.io/cluster-monitoring: "true"
+spec:
+  finalizers:
+  - kubernetes

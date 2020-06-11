@@ -1,0 +1,99 @@
+:data-uri:
+:toc: left
+:markup-in-source: +verbatim,+quotes,+specialcharacters
+:source-highlighter: rouge
+:icons: font
+:stylesdir: stylesheets
+:stylesheet: colony.css
+
+= OpenShift Backup and Restore on VMWare
+
+.Goals
+
+* Understand different strategies for disaster recovery in context of VMWare
+
+
+.References :
+** https://blogs.vmware.com/apps/files/2019/11/Best-Practices-for-Red-Hat-OpenShift-on-the-VMware-SDDC-Final01.pdf[Best Practices for Red Hat
+OpenShift on the VMware]
+
+
+
+:sectnums:
+
+
+Scenario
+Impact
+Recovery Strategy
+Recovery procedure
+Loss of 1 master in Control Plane
+As the Master runs the etcd service, losing 1 Master means 2 etcd nodes are left (in case of 3 Masters scenario). As etcd works on 2n+1 configuration, quorum is still possible with 2 instances (66%).
+
+- No loss of service. Cluster is available in Read-Write mode.
+- No updates for the cluster while this master is down.
+- Snapshot backup
+- Etcd Backup
+Recovery will be based on reason for losing the Master.
+
+- If Master is corrupted, attempt to restore from the snapshot.
+
+- If Master is non-recoverable from a snapshot, , then the procedure will be
+-- Remove the master
+-- Add a new Master (Note remove MUST be done before adding a new master).
+-- Correct DNS and load balancer entries.
+Loss of 2 masters in Control Planes
+Losing 2 etcd services, etcd cannot achieve quorum (1/3 = 33% < 50%)
+etcd goes in read only mode.
+
+- Master quorum will be lost.
+- OCP cluster will be in read-only mode, like no new deployment possible and self-healing functionality will not be available.
+- Application “business as usual” (since application services are still working node).
+
+
+- Snapshot backup
+- Etcd Backup
+Recovery will be based on reason for losing the masters
+
+- If Master is corrupted, attempt to restore from the snapshot.
+- If Master is non-recoverable from a snapshot, then the procedure will be
+-- Restore etcd quorum on a remaining master host.
+-- Create new master hosts.
+-- Correct DNS and load balancer entries.
+-- Grow etcd to full membership.
+
+
+Loss of Routing Service
+As we dedicate Router controllers to run on 3 infra nodes, so losing all the 3 infranodes together will lead to loss of service.
+
+Applications is not reachable
+-  Snapshot backup
+- Scaling additional nodes as Infra
+Recovery will be based on reason for losing the routers;
+- If the infra node is corrupted, attempt to restore from the snapshot.
+- If  infra node is non-recoverable from a snapshot, , then the procedure will be
+-- Create new node hosts.
+-- mark it as infra
+-- Correct DNS and load balancer entries.
+Loss of 1 (or multiple) compute node(s)
+Assuming spare compute capacity is available, then workloads will be automatically distributed across other compute nodes
+
+Intermittent connection reset may be there, but users can reconnect and work as BAU
+
+
+-  Snapshot backup
+- Scaling additional nodes as workers
+Recovery will be based on reason for losing the compute nodes;
+
+- If the worker node is corrupted, attempt to restore from the snapshot.
+- If  worker node is non-recoverable from a snapshot, , then the procedure will be
+-- Create new node hosts.
+-- Correct DNS.
+
+
+
+** Importance of Git Repo and Container Image Repository
+*** Cluster state is built over time by applying series of API Objects (Yaml definition files),
+all the API Objects should be archived in Git repo and part of CICD process to ensure the ability to recover or restore specific state.
+for more info, please refer to https://docs.openshift.com/container-platform/3.11/dev_guide/application_lifecycle/promoting_applications.html#dev-guide-promoting-application-managing-api-objects[Managing API Objects]
+*** Container Image Repository also playing a vital role in recovering cluster state as all Applications images are stored there.
+*** For best practices for configuration drift (Snowflake vs Phoenix Servers patterns), please refer https://servicesblog.redhat.com/2017/10/18/enable-agility-with-infrastructure-as-code/272/[Enable agility with infrastructure-as-code]

@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dev-kubernetes-external-secrets
+  labels:
+    helm.sh/chart: kubernetes-external-secrets-4.0.0
+    $patch: delet
+    app.kubernetes.io/managed-by: Helm
+    $patch: delete
+  spec:
+    template:
+      spec:
+        containers:
+          - name: kubernetes-external-secrets
+            env:
+            - name: "POLLER_INTERVAL_MILLISECONDS"
+              value: "1000"

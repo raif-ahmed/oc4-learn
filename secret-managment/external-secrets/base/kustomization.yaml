@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kubernetes-external-secrets
+commonLabels:
+  app: kubernetes-external-secrets
+  app.kubernetes.io/instance: kubernetes-external-secrets
+
+
+resources:
+- kubernetes-external-secrets-namespace.yaml
+- templates/rbac.yaml
+- templates/serviceaccount.yaml
+- templates/service.yaml
+- templates/deployment.yaml
+
+patchesStrategicMerge:
+- clusterrole-patch.yaml
+- clusterrolebinding-secret-patch.yaml
+- clusterrolebinding-secret-auth-patch.yaml
+- serviceaccount-patch.yaml
+- service-patch.yaml
+- deployment-patch.yaml

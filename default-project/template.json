@@ -1,0 +1,70 @@
+{
+   "kind":"Template",
+   "apiVersion":"template.openshift.io/v1",
+   "metadata":{
+      "name":"project-request",
+      "creationTimestamp":null
+   },
+   "objects":[
+      {
+         "kind":"Project",
+         "apiVersion":"project.openshift.io/v1",
+         "metadata":{
+            "name":"${PROJECT_NAME}",
+            "creationTimestamp":null,
+            "annotations":{
+               "openshift.io/description":"${PROJECT_DESCRIPTION}",
+               "openshift.io/display-name":"${PROJECT_DISPLAYNAME}",
+               "openshift.io/requester":"${PROJECT_REQUESTING_USER}",
+               "openshift.io/node-selector":"changeme",
+               "scheduler.alpha.kubernetes.io/defaultTolerations":"{\"operator\": \"Exists\", \"effect\": \"NoSchedule\", \"key\": \"dedicated-node\"}",
+               "scheduler.alpha.kubernetes.io/tolerationsWhitelist":"{\"operator\": \"Exists\", \"effect\": \"NoSchedule\", \"key\": \"dedicated-node\"}"
+            }
+         },
+         "spec":{
+
+         },
+         "status":{
+
+         }
+      },
+      {
+         "kind":"RoleBinding",
+         "apiVersion":"rbac.authorization.k8s.io/v1",
+         "metadata":{
+            "name":"admin",
+            "namespace":"${PROJECT_NAME}",
+            "creationTimestamp":null
+         },
+         "subjects":[
+            {
+               "kind":"User",
+               "apiGroup":"rbac.authorization.k8s.io",
+               "name":"${PROJECT_ADMIN_USER}"
+            }
+         ],
+         "roleRef":{
+            "apiGroup":"rbac.authorization.k8s.io",
+            "kind":"ClusterRole",
+            "name":"admin"
+         }
+      }
+   ],
+   "parameters":[
+      {
+         "name":"PROJECT_NAME"
+      },
+      {
+         "name":"PROJECT_DISPLAYNAME"
+      },
+      {
+         "name":"PROJECT_DESCRIPTION"
+      },
+      {
+         "name":"PROJECT_ADMIN_USER"
+      },
+      {
+         "name":"PROJECT_REQUESTING_USER"
+      }
+   ]
+}

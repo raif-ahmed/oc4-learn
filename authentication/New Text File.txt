@@ -1,0 +1,106 @@
+oc exec po/oauth-openshift-647c9cfdfc-h5fmz -n openshift-authentication -- cat /var/config/system/configmaps/v4-0-config-system-cliconfig/v4-0-config-system-cliconfig
+
+
+admission: {}
+apiVersion: osin.config.openshift.io/v1
+auditConfig:
+  auditFilePath: ""
+  enabled: false
+  logFormat: ""
+  maximumFileRetentionDays: 0
+  maximumFileSizeMegabytes: 0
+  maximumRetainedFiles: 0
+  policyConfiguration: null
+  policyFile: ""
+  webHookKubeConfig: ""
+  webHookMode: ""
+corsAllowedOrigins: null
+kind: OsinServerConfig
+kubeClientConfig:
+  connectionOverrides:
+    acceptContentTypes: ""
+    burst: 400
+    contentType: ""
+    qps: 400
+  kubeConfig: ""
+oauthConfig:
+  alwaysShowProviderSelection: false
+  assetPublicURL: 'https://console-openshift-console.apps.rmahmoud.lab.rdu2.cee.redhat.com'
+  grantConfig:
+    method: deny
+    serviceAccountMethod: prompt
+  identityProviders:
+    -
+      challenge: true
+      login: true
+      mappingMethod: claim
+      name: dummy
+      provider:
+        apiVersion: osin.config.openshift.io/v1
+        file: /var/config/user/idp/0/secret/v4-0-config-user-idp-0-file-data/htpasswd
+        kind: HTPasswdPasswordIdentityProvider
+  loginURL: 'https://api.rmahmoud.lab.rdu2.cee.redhat.com:6443'
+  masterCA: /var/config/system/configmaps/v4-0-config-system-service-ca/service-ca.crt
+  masterPublicURL: 'https://oauth-openshift.apps.rmahmoud.lab.rdu2.cee.redhat.com'
+  masterURL: 'https://oauth-openshift.openshift-authentication.svc'
+  sessionConfig:
+    sessionMaxAgeSeconds: 300
+    sessionName: ssn
+    sessionSecretsFile: /var/config/system/secrets/v4-0-config-system-session/v4-0-config-system-session
+  templates:
+    error: /var/config/system/secrets/v4-0-config-system-ocp-branding-template/errors.html
+    login: /var/config/system/secrets/v4-0-config-system-ocp-branding-template/login.html
+    providerSelection: /var/config/system/secrets/v4-0-config-system-ocp-branding-template/providers.html
+  tokenConfig:
+    accessTokenMaxAgeSeconds: 86400
+    authorizeTokenMaxAgeSeconds: 300
+servingInfo:
+  bindAddress: '0.0.0.0:6443'
+  bindNetwork: tcp4
+  certFile: /var/config/system/secrets/v4-0-config-system-serving-cert/tls.crt
+  cipherSuites:
+    - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+    - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+    - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+    - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+    - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+    - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+    - TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+    - TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+    - TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
+    - TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
+    - TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+    - TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+    - TLS_RSA_WITH_AES_128_GCM_SHA256
+    - TLS_RSA_WITH_AES_256_GCM_SHA384
+    - TLS_RSA_WITH_AES_128_CBC_SHA
+    - TLS_RSA_WITH_AES_256_CBC_SHA
+  keyFile: /var/config/system/secrets/v4-0-config-system-serving-cert/tls.key
+  maxRequestsInFlight: 1000
+  minTLSVersion: VersionTLS12
+  namedCertificates:
+    -
+      certFile: /var/config/system/secrets/v4-0-config-system-router-certs/apps.rmahmoud.lab.rdu2.cee.redhat.com
+      keyFile: /var/config/system/secrets/v4-0-config-system-router-certs/apps.rmahmoud.lab.rdu2.cee.redhat.com
+      names:
+        - '*.apps.rmahmoud.lab.rdu2.cee.redhat.com'
+  requestTimeoutSeconds: 300
+storageConfig:
+  ca: ""
+  certFile: ""
+  keyFile: ""
+  storagePrefix: ""
+
+---------------------------
+
+
+oc create -f <(echo '
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  name: cluster
+spec:
+  tokenConfig:
+    accessTokenMaxAgeSeconds: 172800 
+')
+

@@ -1,0 +1,7 @@
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: argocd-op-grp
+spec:
+  targetNamespaces:
+  - ${ARGOCD_PROJECT_NAME}

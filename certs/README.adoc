@@ -1,0 +1,28 @@
+:data-uri:
+:toc: left
+:markup-in-source: +verbatim,+quotes,+specialcharacters
+:source-highlighter: rouge
+:icons: font
+:stylesdir: stylesheets
+:stylesheet: colony.css
+
+= OpenShift 4.x Certificates
+
+:sectnums:
+
+== API server Certificate
+
+Explaining API server certificates and how to add custom named certificate,
+You can add additional certificates to the API server.
+
+link:custom_api_server_cert/[Api Server Certificates]
+
+== Cluster Wide Trusted CA
+
+Talking about how to add custom CA Cert so it can be cluster wide trusted.
+
+link:custom_trusted_ca_cluster_wide/[Cluster Wide Trusted CA]
+
+== Service Serving certificates
+
+link:service_serving_certificate/[Service Serving Certificate]

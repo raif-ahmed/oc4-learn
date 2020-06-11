@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dev-kubernetes-external-secrets
+spec:
+  template:
+    spec:
+      containers:
+        - name: kubernetes-external-secrets
+          env:
+          - name: "AZURE_TENANT_ID"
+            value: "TENANT_ID"
+          - name: "AZURE_CLIENT_ID"
+            value: "CLIENT_ID"
+          - name: "AZURE_CLIENT_SECRET"
+            value: "CLIENT_SECRET"

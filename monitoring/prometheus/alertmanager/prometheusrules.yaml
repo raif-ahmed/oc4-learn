@@ -1,0 +1,52 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    prometheus: k8s
+    role: alert-rules
+  name: prometheus-nxp-rules
+  namespace: openshift-monitoring
+spec:
+  groups:
+  - name: nxp.rules
+    rules:
+    - alert: NXPNodeMemoryUsageHigh
+      annotations:
+        message: This is an indication that the memory usage ratio for {{ $labels.hostname
+          }} is {{ $value }} > 0.8
+      expr: |
+        node_memory_MemAvailable_bytes{job="node-exporter"}/node_memory_MemTotal_bytes{job="node-exporter"}
+          > 0.8
+      for: 5m
+      labels:
+        severity: warning
+    - alert: NXPNodeCPUUsageHigh
+      annotations:
+        message: This is an indication that the CPU usage ratio for {{ $labels.hostname
+          }} is {{ $value }} > 0.8
+      expr: |
+        sum(rate(node_cpu_seconds_total{mode!~"idle|iowait"}[5m])) WITHOUT
+        (cpu, mode) / ON(instance) GROUP_LEFT() count(sum(node_cpu_seconds_total)
+        BY (instance, cpu)) BY (instance)
+          > 0.8
+      for: 5m
+      labels:
+        severity: warning
+    - alert: NXPInfraNodeIsLessThanThree
+      annotations:
+        message: This is an indication that the number of infra nodes is {{ $value }} < 3
+      expr: |
+        sum by (job) (up{job="kubelet",metrics_path="/metrics"} and on(node)  kube_node_role{role="master"} == bool 1) < 3
+      for: 3m
+      labels:
+        severity: critical
+    - alert: NXPBUNodeIsLessThanThree
+      annotations:
+        message: This is an indication that the number of BU nodes is {{ $value }} < 3
+      expr: |
+        sum by (job) (up{job="kubelet",metrics_path="/metrics"} and on(node) kube_node_labels{label_test_label_node="true"} == bool 1) < 3
+      for: 3m
+      labels:
+        severity: critical
+
+   
