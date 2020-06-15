@@ -9,7 +9,13 @@
 ClusterName=$(sed -e 's/\(.*\)/\L\1/' <<< "$ClusterName")
 echo "ClusterName is ${ClusterName}"
 
-${IBMC} login -a ${URL} -r ${REGION} -u ${USR} -p ${PASS} -c ${ACCOUNTID} -g ${RESGRP}
+KEY_FILE=./oc-deploy.key
+if [[ -f "$KEY_FILE" ]]; then
+    echo "$KEY_FILE exists."
+else 
+    echo "$KEY_FILE does not exist."
+    ibmcloud iam api-key-create oc-deploy --file oc-deploy-key-file
+fi
 
 export PrivateVlanId=$(${IBMC} sl vlan list -d $DataCenterZone --output json | jq '.[] | select(.networkSpace=="PRIVATE")' | jq ."id"| head -n1)
 echo "private is ${PrivateVlanId}"
