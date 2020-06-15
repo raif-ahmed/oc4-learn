@@ -15,5 +15,8 @@ The idea of this series is to understand the IBM Cloud echo system with respect 
 
 Bash script to deply OCP on IBM cloud (WIP convert it to ansible using https://github.com/IBM-Cloud/ansible-collection-ibm Looks pretty basic to me but maybe some help from IBM).
 
-* link:00_create_cluster.sh[]
-* link:01_delete_cluster.sh[]
+If you don't have an https://cloud.ibm.com/docs/iam?topic=iam-federated_id#api_key[API key file], then please create a param file (check link:params.txt[params.txt] for the format) that contain the credentials that will be used to login to IBM cloud and then script will cate the API key.
+ 
+* link:00_prep-env.sh[]
+* link:10_create_cluster.sh[]
+* link:99_delete_cluster.sh[]
