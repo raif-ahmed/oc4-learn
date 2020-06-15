@@ -14,4 +14,4 @@
 .nfs*
 
 # key files
-.key
+*.key

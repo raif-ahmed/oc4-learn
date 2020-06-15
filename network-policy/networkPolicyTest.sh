@@ -16,7 +16,18 @@ oc exec -n sample2 $(oc get po -n sample2 -l deploymentconfig=httpd -o name) -- 
 # From sample2 call sample2
 oc exec -n sample2 $(oc get po -n sample2 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample2.svc.cluster.local:8080
 
-oc label namespace/openshift-ingress network.openshift.io/policy-group=ingress
+# Ensure that this label exists (IBM cloud bug)
+#oc label namespace/openshift-ingress network.openshift.io/policy-group=ingress
+
+export networkType=$(oc get --namespace openshift-ingress-operator ingresscontrollers/default --output jsonpath='{.status.endpointPublishingStrategy.type}')
+
+
+if [ "$networkType" = "HostNetwork" ]; then
+    echo "label default namespace" 
+    oc label namespace/default 'network.openshift.io/policy-group=ingress'
+fi
+
+
 
 
 oc apply -f networkPolicy.yaml -n sample2

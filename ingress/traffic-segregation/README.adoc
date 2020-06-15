@@ -1,4 +1,16 @@
-= Using bitnami-labs Sealed Secrets
+= Demo for Ingress Controller sharding in OCP 4
+
+
+
+oc edit ingress.config.openshift.io/cluster
+
+
+
+
+
+oc patch ingresscontroller default -n openshift-ingress-operator --type=merge -p '{"spec":{"domain":"subdomian1.myopenshift-725535-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud"}}'
+
+
 
 The idea is to Split Ingress traffic according to ** Enable Ingress Controller sharding
 ** Enable Network polices
