@@ -1,0 +1,11 @@
+# params for script
+# rename to "params" to use this
+DataCenterZone=ams03
+ClusterName="myclustername" 
+URL=https://api.eu-de.bluemix.net
+REGION=eu-ed
+USR=myusername@cloud.ibm.com
+PASS="verycompl3x"
+ACCOUNTID=longstring
+RESGRP=myresourcegroup
+IBMC=/usr/local/bin/ibmcloud
