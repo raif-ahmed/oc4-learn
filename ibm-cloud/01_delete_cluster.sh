@@ -14,7 +14,7 @@ then
   ibmcloud cos config auth --method IAM
   ibmcloud cos config crn --crn $COSServiceId --force
 
-  ibmcloud cos delete-bucket --bucket "$ClusterName"-bucket 
+  ibmcloud cos delete-bucket --bucket "$ClusterName"-bucket --force
   if [ $? -eq 0 ]
   then
     echo "Bucket Deleted Successfully, deleteing service"
