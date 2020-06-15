@@ -29,14 +29,7 @@ else
 fi
 
 
-
-
-
-
-
-#ibmcloud oc cluster rm --cluster $ClusterName -f
-
-
+ibmcloud oc cluster rm --cluster $ClusterName -f
 
 
 exit;
