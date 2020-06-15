@@ -14,6 +14,8 @@ if [[ -f "$KEY_FILE" ]]; then
     echo "$KEY_FILE exists."
 else 
     echo "$KEY_FILE does not exist."
+    . params
+    ${IBMC} login -a ${URL} -r ${REGION} -u ${USR} -p ${PASS} -c ${ACCOUNTID} -g ${RESGRP}
     ibmcloud iam api-key-create oc-deploy --file oc-deploy-key-file
 fi
 
