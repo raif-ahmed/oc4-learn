@@ -1,6 +1,4 @@
-export DataCenterZone=ams03
-export ClusterName="newopenshift"
-
+. params
 
 ibmcloud login --apikey @oc-deploy.key -c 63cf37b8c3bb448cbf9b7507cc8ca57d -g benelux --sso
 
@@ -13,6 +11,15 @@ then
   echo "$COSServiceId"
   ibmcloud cos config auth --method IAM
   ibmcloud cos config crn --crn $COSServiceId --force
+  
+  ObjectsCount=$(ibmcloud cos list-objects --bucket "$ClusterName"-bucket --json | jq '. | select(.Contents != null) | .Contents[].Key' | wc -l)
+
+  if [ "$ObjectsCount" -gt 0 ] ; then
+    echo "Ooops there are $ObjectsCount objects in the bucket, cannot delete the bucket till it is empty" 
+    exit 1;
+  else
+    echo "Yayy bucket is empty"	
+  fi
 
   ibmcloud cos delete-bucket --bucket "$ClusterName"-bucket --force
   if [ $? -eq 0 ]
