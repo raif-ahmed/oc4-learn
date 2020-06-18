@@ -28,3 +28,6 @@ The idea is to use external secret management systems, like AWS Secrets Manager 
 The controller is responsible to fetch secret data from external providers and add it to namespace
 
 link:external-secrets[GoDaddy Kubernetes External Secrets]
+
+
+WIP::mozilla/sops
