@@ -15,7 +15,7 @@ then
   ObjectsCount=$(ibmcloud cos list-objects --bucket "$ClusterName"-bucket --json | jq '. | select(.Contents != null) | .Contents[].Key' | wc -l)
 
   if [ "$ObjectsCount" -gt 0 ] ; then
-    echo "Ooops there are $ObjectsCount objects in the bucket, cannot delete the bucket till it is empty" 
+    echo "Ooops there are $ObjectsCount objects in the bucket, cannot delete the bucket till it is empty Please empty the bucket an re-run the script again" 
     exit 1;
   else
     echo "Yayy bucket is empty"	
