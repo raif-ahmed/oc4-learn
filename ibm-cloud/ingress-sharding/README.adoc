@@ -1,0 +1,90 @@
+=  Ingress Sharding
+
+Explaining how to add additional Ingress controller for sharding Ingress Traffic in IBM Cloud.
+
+The idea is to Split Ingress traffic, Ingress Controller sharding which is useful when balancing incoming traffic load among a set of Ingress Controllers
+and then isolating traffic to set of Pods from specific Ingress Controller
+
+* Create Ingress Controller shard
+* Create demo applications
+* Enable Network polices
+
+== Create Ingress Controller shard
+
+. Get the current dns entries for the cluster for more info refer to
+https://cloud.ibm.com/docs/openshift?topic=openshift-loadbalancer_hostname[Classic: Registering a DNS subdomain for an NLB]
++
+[source,bash]
+----
+$ ibmcloud oc nlb-dns ls --cluster myclustername
+
+OK
+Hostname                                                                                      IP(s)           Health Monitor   SSL Cert Status   SSL Cert Secret Name                                         Secret Namespace
+myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud   159.8.232.162   None             created           myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000   openshift-ingress
+----
++
+copy the subdomain and add it to the link:sharded-ingress-controller.yaml[ingress controller yaml file], "domain". But change the 000<n> value in the Hostname to 000<n+1>
++
+[source,yaml]
+----
+apiVersion: operator.openshift.io/v1
+kind: IngressController
+metadata:
+  name: sharded-ingress-controller
+  namespace: openshift-ingress-operator
+spec:
+  replicas: 1
+  domain: myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud <1>
+  endpointPublishingStrategy:
+    loadBalancer:
+      scope: External
+    type: LoadBalancerService
+  namespaceSelector:
+      matchLabels:
+        type: sharded
+----
+<1> Example, the myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud subdomain
+is changed to myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud.
++
+NOTE: The 0 value indicates a public subdomain, and the n+1 value indicates the next consecutive subdomain that you create in this cluster.
++
+. Add the new Ingress Controller
++
+Apply the Ingress Controller router-internal.yaml file:
++
+[source,bash]
+----
+oc apply -f sharded-ingress-controller.yaml
+
+ibmcloud oc nlb-dns create classic --cluster myclustername --type public --secret-namespace openshift-ingress --ip $(oc get svc/router-sharded-ingress-controller -n openshift-ingress -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+----
++
+now check if everything is OK
++
+[source,bash]
+----
+ibmcloud oc nlb-dns ls --cluster myclustername
+----
++
+IMPORTANT: If the output of "ibmcloud oc nlb-dns ls" is Pending Please give it sometime !! it really takes time till the secret is created with certificates !!
++
+Once it is create nlb dns entry is created you will be able to resolve it so you can try the following
+[source,bash]
+----
+oc get svc/router-sharded-ingress-controller -n openshift-ingress <1>
+
+nslookup myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud <2>
+----
+<1> Get the EXTERNAL-IP of the newly created service "router-sharded-ingress-controller"
+<2> Change the DNS to match your new dns entry, the expected result is the IP of the service ExternalIP
+
+== Create demo applications
+[source,bash]
+----
+oc new-project sample1
+oc new-app httpd
+
+oc new-project sample2
+oc label namespace sample2 type=sharded
+oc new-app httpd
+----

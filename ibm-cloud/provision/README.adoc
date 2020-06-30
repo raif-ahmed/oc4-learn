@@ -1,0 +1,30 @@
+:data-uri:
+:toc: left
+:markup-in-source: +verbatim,+quotes,+specialcharacters
+:source-highlighter: rouge
+:icons: font
+:stylesdir: stylesheets
+:stylesheet: colony.css
+
+= Provision
+
+Explaining how to use IBM Cloud CLI to provision OpenShift cluster using https://github.com/openshift/ibm-roks-toolkit[RedHat OpenShift Kubernetes Service (ROKS)].
+
+:sectnums:
+
+== Deploy OCP to IBMCloud
+
+Bash script to
+. deploy OCP on IBM cloud using IBM Cloud CLI and ROKS
+. Create S3 Bucket
+. Chang the cluster internal registry storage to use the new S3 bucket
+. Scale the internal registry to 2 replicas for HA.
+
+
+If you don't have an https://cloud.ibm.com/docs/iam?topic=iam-federated_id#api_key[API key file],
+then please create a "params" file (check link:params.txt[params.txt] for the format)
+that contain the credentials that will be used to login to IBM cloud and then script will create the API key.
+
+* link:00_prep-env.sh[]
+* link:10_create_cluster.sh[]
+* link:99_delete_cluster.sh[]
