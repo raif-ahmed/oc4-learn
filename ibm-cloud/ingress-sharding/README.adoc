@@ -130,10 +130,36 @@ spec:
 
 [source,bash]
 ----
-oc apply -f route.yaml
+oc apply -f route-namespace-selector.yaml
+----
+
+Now lets try to check communication accessibility
+
+[source,bash]
+----
+curl --max-time 2 http://httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud
 ----
 
 == Enable Network polices
+
+In the previous section we created a route which is exposed using "sharded-ingress". But by default, the default router have no routeSelector,
+and for this reason still we can expose routes using default router
+
+[source,bash]
+----
+oc expose svc/httpd --hostname=httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud
+----
+
+Now lets try to play with curl to check communication accessibility
+
+[source,bash]
+----
+# The route exposed on default router
+curl  --max-time 2 http://httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud
+
+# The route exposed on sharded-ingress router
+curl --max-time 2 http://httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud
+----
 
 Following documentation https://docs.openshift.com/container-platform/4.3/networking/configuring-networkpolicy.html#nw-networkpolicy-multitenant-isolation_configuring-networkpolicy-plugin[Configuring multitenant isolation using NetworkPolicy]
 
@@ -197,6 +223,11 @@ spec:
     - podSelector: {}
 ----
 
+[source,bash]
+----
+oc apply -f networkPolicy-default-ingress.yaml
+----
+
 The following yaml will create multitenant isolation, so pods within sample2 namesapce only are allowed to communicate, and also incoming communication from both sharded-ingress-controller and monitoring
 
 .networkPolicy-sharded-ingress.yaml
@@ -256,23 +287,18 @@ spec:
   - from:
     - podSelector: {}
 ----
+[source,bash]
+----
+oc apply -f networkPolicy-sharded-ingress.yaml
+----
 
 Now lets try again curl to check communication accessibility
 
 [source,bash]
 ----
-# From sample1 call sample2 -- It should fail
-oc exec -n sample1 $(oc get po -n sample1 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample2.svc.cluster.local:8080
-# From sample1 call sample1
-oc exec -n sample1 $(oc get po -n sample1 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample1.svc.cluster.local:8080
+# The route exposed on default router
+curl  --max-time 2 http://httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud
 
-# From sample2 call sample1
-oc exec -n sample2 $(oc get po -n sample2 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample1.svc.cluster.local:8080
-# From sample2 call sample2
-oc exec -n sample2 $(oc get po -n sample2 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample2.svc.cluster.local:8080
-
-
-# Now test from ingress as it should successes
-export POD_IP=$(oc get po -l deploymentconfig=httpd -n sample2 -o=jsonpath="{.items[0].status.podIP}")
-oc exec -n openshift-ingress $(oc get po -l ingresscontroller.operator.openshift.io/deployment-ingresscontroller=default --all-namespaces -o name |head -1) -- curl --max-time 2 http://${POD_IP}:8080
+# The route exposed on sharded-ingress router
+curl --max-time 2 http://httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud
 ----
