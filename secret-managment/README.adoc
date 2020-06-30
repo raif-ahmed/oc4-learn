@@ -30,4 +30,4 @@ The controller is responsible to fetch secret data from external providers and a
 link:external-secrets[GoDaddy Kubernetes External Secrets]
 
 
-WIP::mozilla/sops
+== WIP::mozilla/sops
