@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# to get available zones 
+# to get available zones
 # ${IBMC} oc zone ls --provider classic
 
 . params
@@ -13,7 +13,7 @@ KEY_FILE=./oc-deploy.key
 if [[ -f "$KEY_FILE" ]]; then
     echo "$KEY_FILE exists."
     ibmcloud login --apikey @oc-deploy.key -c 63cf37b8c3bb448cbf9b7507cc8ca57d -g benelux --sso
-else 
+else
     echo "$KEY_FILE does not exist."
     ${IBMC} login -a ${URL} -r ${REGION} -u ${USR} -p ${PASS} -c ${ACCOUNTID} -g ${RESGRP}
     ibmcloud iam api-key-create oc-deploy --file oc-deploy-key-file
@@ -93,7 +93,8 @@ oc create secret generic image-registry-private-configuration-user --from-litera
 
 #TODO: I want to use encrypt, keyID to integarte with IBM KMS and encrypt images .. WIP
 
-oc patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"storage":{"pvc":null,"s3":{"bucket":"'$BucketName'","region":"eu-de","regionEndpoint":"s3.private.eu-de.cloud-object-storage.appdomain.cloud"}}}}'
+oc patch configs.imageregistry.operator.openshift.io/cluster --type=merge -p '{"spec":{"replicas":2,"storage":{"pvc":null,"s3":{"bucket":"'$BucketName'","region":"eu-de","regionEndpoint":"s3.private.eu-de.cloud-object-storage.appdomain.cloud"}}}}'
+
 
 #${IBMC} ks kms
 
