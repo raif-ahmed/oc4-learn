@@ -5,11 +5,17 @@ metadata:
   namespace: openshift-ingress-operator
 spec:
   replicas: 1
+  defaultCertificate:
+    name: myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001
   domain: myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud
   endpointPublishingStrategy:
     loadBalancer:
       scope: External
     type: LoadBalancerService
-  namespaceSelector:
+  nodePlacement:
+    tolerations:
+    - key: dedicated
+      value: edge
+  routeSelector:
       matchLabels:
         type: sharded

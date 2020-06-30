@@ -25,26 +25,35 @@ myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appd
 +
 copy the subdomain and add it to the link:sharded-ingress-controller.yaml[ingress controller yaml file], "domain". But change the 000<n> value in the Hostname to 000<n+1>
 +
+.sharded-ingress-controller-namespace-selector.yaml
 [source,yaml]
 ----
-apiVersion: operator.openshift.io/v1
-kind: IngressController
-metadata:
-  name: sharded-ingress-controller
-  namespace: openshift-ingress-operator
-spec:
-  replicas: 1
-  domain: myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud <1>
-  endpointPublishingStrategy:
-    loadBalancer:
-      scope: External
-    type: LoadBalancerService
-  namespaceSelector:
-      matchLabels:
-        type: sharded
+  apiVersion: operator.openshift.io/v1
+  kind: IngressController
+  metadata:
+    name: sharded-ingress-controller
+    namespace: openshift-ingress-operator
+  spec:
+    replicas: 1
+    defaultCertificate:
+      name: myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001 <1>
+    domain: myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud <2>
+    endpointPublishingStrategy:
+      loadBalancer:
+        scope: External
+      type: LoadBalancerService
+    nodePlacement:
+      tolerations:
+      - key: dedicated
+        value: edge
+    routeSelector:
+        matchLabels:
+          type: sharded <3>
 ----
-<1> Example, the myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud subdomain
+<1> The secret name that will be created by IBM Cloud. So the Pod will keep crashing till secret is created.
+<2> Example, the myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud subdomain
 is changed to myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud.
+<3> The Ingress Controller selects routes in any namespace that is selected by the route selector that have the label type: sharded
 +
 NOTE: The 0 value indicates a public subdomain, and the n+1 value indicates the next consecutive subdomain that you create in this cluster.
 +
@@ -76,9 +85,12 @@ oc get svc/router-sharded-ingress-controller -n openshift-ingress <1>
 nslookup myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud <2>
 ----
 <1> Get the EXTERNAL-IP of the newly created service "router-sharded-ingress-controller"
-<2> Change the DNS to match your new dns entry, the expected result is the IP of the service ExternalIP
+<2> Change the DNS to match your new dns entry, the expected result of the command is the IP of the service ExternalIP
 
 == Create demo applications
+
+So now we will start with creating demo applications.
+
 [source,bash]
 ----
 oc new-project sample1
@@ -87,4 +99,180 @@ oc new-app httpd
 oc new-project sample2
 oc label namespace sample2 type=sharded
 oc new-app httpd
+----
+
+Now let see the route definition
+
+.route-namespace-selector.yaml
+[source,yaml]
+----
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: httpd
+    app.kubernetes.io/component: httpd
+    app.kubernetes.io/instance: httpd
+  name: httpd-shard
+  namespace: sample2
+spec:
+  host: httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud <1>
+  subdomain: ""
+  port:
+    targetPort: 8080-tcp
+  to:
+    kind: Service
+    name: httpd
+    weight: 100
+  wildcardPolicy: None
+----
+<1> Don't forget to update it to match your DNS entry.
+
+[source,bash]
+----
+oc apply -f route.yaml
+----
+
+== Enable Network polices
+
+Following documentation https://docs.openshift.com/container-platform/4.3/networking/configuring-networkpolicy.html#nw-networkpolicy-multitenant-isolation_configuring-networkpolicy-plugin[Configuring multitenant isolation using NetworkPolicy]
+
+The following yaml will create multitenant isolation, so pods within sample1 namesapce only are allowed to communicate, and also incoming communication from both default ingress and monitoring
+
+.networkPolicy-default-ingress.yaml
+[source, yaml]
+----
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: deny-by-default
+  namespace: sample1
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-from-openshift-default-ingress
+  namespace: sample1
+spec:
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            network.openshift.io/policy-group: ingress
+        podSelector:
+          matchLabels:
+            ingresscontroller.operator.openshift.io/deployment-ingresscontroller: default
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-openshift-monitoring
+  namespace: sample1
+spec:
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            network.openshift.io/policy-group: monitoring
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-same-namespace
+  namespace: sample1
+spec:
+  podSelector:
+  ingress:
+  - from:
+    - podSelector: {}
+----
+
+The following yaml will create multitenant isolation, so pods within sample2 namesapce only are allowed to communicate, and also incoming communication from both sharded-ingress-controller and monitoring
+
+.networkPolicy-sharded-ingress.yaml
+[source, yaml]
+----
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: deny-by-default
+  namespace: sample1
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-from-openshift-default-ingress
+  namespace: sample1
+spec:
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            network.openshift.io/policy-group: ingress
+        podSelector:
+          matchLabels:
+            ingresscontroller.operator.openshift.io/deployment-ingresscontroller: sharded-ingress-controller
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-openshift-monitoring
+  namespace: sample1
+spec:
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            network.openshift.io/policy-group: monitoring
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-same-namespace
+  namespace: sample1
+spec:
+  podSelector:
+  ingress:
+  - from:
+    - podSelector: {}
+----
+
+Now lets try again curl to check communication accessibility
+
+[source,bash]
+----
+# From sample1 call sample2 -- It should fail
+oc exec -n sample1 $(oc get po -n sample1 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample2.svc.cluster.local:8080
+# From sample1 call sample1
+oc exec -n sample1 $(oc get po -n sample1 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample1.svc.cluster.local:8080
+
+# From sample2 call sample1
+oc exec -n sample2 $(oc get po -n sample2 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample1.svc.cluster.local:8080
+# From sample2 call sample2
+oc exec -n sample2 $(oc get po -n sample2 -l deploymentconfig=httpd -o name) -- curl --max-time 2 http://httpd.sample2.svc.cluster.local:8080
+
+
+# Now test from ingress as it should successes
+export POD_IP=$(oc get po -l deploymentconfig=httpd -n sample2 -o=jsonpath="{.items[0].status.podIP}")
+oc exec -n openshift-ingress $(oc get po -l ingresscontroller.operator.openshift.io/deployment-ingresscontroller=default --all-namespaces -o name |head -1) -- curl --max-time 2 http://${POD_IP}:8080
 ----
