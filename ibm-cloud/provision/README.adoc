@@ -15,6 +15,7 @@ Explaining how to use IBM Cloud CLI to provision OpenShift cluster using https:/
 == Deploy OCP to IBMCloud
 
 Bash script to
+
 . deploy OCP on IBM cloud using IBM Cloud CLI and ROKS
 . Create S3 Bucket
 . Chang the cluster internal registry storage to use the new S3 bucket
