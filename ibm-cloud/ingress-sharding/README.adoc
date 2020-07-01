@@ -23,7 +23,7 @@ Hostname                                                                        
 myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud   159.8.232.162   None             created           myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000   openshift-ingress
 ----
 +
-copy the subdomain and add it to the link:sharded-ingress-controller.yaml[ingress controller yaml file], "domain". But change the 000<n> value in the Hostname to 000<n+1>
+copy the subdomain and add it to the link:sharded-ingress-controller-namespace-selector.yaml[ingress controller yaml file], "domain". But change the 000<n> value in the Hostname to 000<n+1>
 +
 .sharded-ingress-controller-namespace-selector.yaml
 [source,yaml]
