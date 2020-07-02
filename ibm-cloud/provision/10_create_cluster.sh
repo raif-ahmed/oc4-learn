@@ -24,7 +24,7 @@ echo "private is ${PrivateVlanId}"
 
 if [ "${PrivateVlanId}" == "" ]; then
   # Create VPC for deployment
-  echo "Createing Private VPC"
+  echo "Createing Private Vlan"
   ${IBMC} sl vlan create -t private -d $DataCenterZone -f
   export PrivateVlanId=$(${IBMC} sl vlan list -d $DataCenterZone --output json | jq '.[] | select(.networkSpace=="PRIVATE")' | jq ."id"| head -n1)
 fi
@@ -34,7 +34,7 @@ echo "public is ${PublicVlanId}"
 
 if [ "${PublicVlanId}" == "" ]; then
   # Create VPC for deployment
-  echo "Createing Public VPC"
+  echo "Createing Public Vlan"
   ${IBMC} sl vlan create -t public -d $DataCenterZone -f
   export PublicVlanId=$(${IBMC} sl vlan list -d $DataCenterZone --output json | jq '.[] | select(.networkSpace=="PUBLIC")' | jq ."id"| head -n1)
 fi
