@@ -6,6 +6,10 @@
 :stylesdir: stylesheets
 :stylesheet: colony.css
 
+.References :
+** https://cloud.ibm.com/docs/openshift?topic=openshift-clusters[Creating OpenShift clusters]
+** https://cloud.ibm.com/docs/cloud-infrastructure?topic=cloud-infrastructure-compare-infrastructure[Comparing IBM Cloud Classic and VPC infrastructure environments]
+
 = Provision
 
 Explaining how to use IBM Cloud CLI to provision OpenShift cluster using https://github.com/openshift/ibm-roks-toolkit[RedHat OpenShift Kubernetes Service (ROKS)].
