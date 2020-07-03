@@ -23,7 +23,7 @@ Bash script to
 . deploy OCP on IBM cloud using IBM Cloud CLI and ROKS
 . Create S3 Bucket
 . Chang the cluster internal registry storage to use the new S3 bucket
-. Scale the internal registry to 2 replicas for HA.
+. Scale the internal registry to 2 replicas for HA, according to recommendation from https://docs.openshift.com/container-platform/4.3/scalability_and_performance/optimizing-storage.html#recommended-configurable-storage-technology_persistent-storage[Recommended configurable storage technology].
 
 
 If you don't have an https://cloud.ibm.com/docs/iam?topic=iam-federated_id#api_key[API key file],
