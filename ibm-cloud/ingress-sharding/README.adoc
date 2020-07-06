@@ -25,6 +25,8 @@ myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appd
 +
 copy the subdomain and add it to the link:sharded-ingress-controller-namespace-selector.yaml[ingress controller yaml file], "domain". But change the 000<n> value in the Hostname to 000<n+1>
 +
+NOTE: The 0 value indicates a public subdomain, and the n+1 value indicates the next consecutive subdomain that you create in this cluster.
++
 .sharded-ingress-controller-namespace-selector.yaml
 [source,yaml]
 ----
@@ -54,8 +56,6 @@ copy the subdomain and add it to the link:sharded-ingress-controller-namespace-s
 <2> Example, the myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud subdomain
 is changed to myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud.
 <3> The Ingress Controller selects routes in any namespace that is selected by the route selector that have the label type: sharded
-+
-NOTE: The 0 value indicates a public subdomain, and the n+1 value indicates the next consecutive subdomain that you create in this cluster.
 +
 . Add the new Ingress Controller
 +
