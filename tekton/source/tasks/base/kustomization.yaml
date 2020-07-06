@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+# needed for maven
+- m2-cache-pvc.yaml
+git::https://dev.azure.com/myorg/myproject/_git/my-repo.git/some-path
+# Tekton tasks
+- task-git.yaml
+- task-maven.yaml
