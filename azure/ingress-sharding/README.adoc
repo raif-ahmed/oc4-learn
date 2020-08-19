@@ -1,0 +1,541 @@
+=  Azure Route Sharding
+
+Explaining how to add additional Ingress controller for sharding Ingress Traffic in Azure Cloud (I created previously another post for IBM Cloud link:../../ibm-cloud/ingress-sharding/[IBM-Cloud/Ingress Sharding]).
+
+The idea is to Split Ingress traffic, Ingress Controller sharding which is useful when balancing incoming traffic load among a set of Ingress Controllers
+and then isolating traffic to set of Pods from specific Ingress Controller. This is a common requirement for many clients in order to separate the internal and public/dmz application routes
+
+The steps we will follow is ;
+
+* Create Ingress Controller shard
+* Create demo applications
+* Enable Network polices
+
+== Quick look at default IngressController
+First thing, lets have a look at the current one (default).
+
+. By default the https://github.com/openshift/cluster-ingress-operator[Ingress Operator] create a default ingresscontroller “default” and deploy it to the openshift-ingress-operator namespace
+[source,bash]
+----
+$ oc get ingresscontroller default -n openshift-ingress-operator -o yaml
+----
+[source,yaml]
+----
+apiVersion: operator.openshift.io/v1
+kind: IngressController
+metadata:
+  creationTimestamp: "2020-08-17T12:40:51Z"
+  finalizers:
+  - ingresscontroller.operator.openshift.io/finalizer-ingresscontroller
+  generation: 2
+  name: default
+  namespace: openshift-ingress-operator
+  resourceVersion: "22805"
+  selfLink: /apis/operator.openshift.io/v1/namespaces/openshift-ingress-operator/ingresscontrollers/default
+  uid: 583da6da-5039-40a0-bfb8-b13301e749ce
+spec:
+  defaultCertificate:
+    name: ad15dfe4-0003-444b-a9cb-8f724b7012bb-ingress
+  replicas: 2
+status:
+  availableReplicas: 2
+  conditions:
+  - lastTransitionTime: "2020-08-17T12:40:51Z"
+    reason: Valid
+    status: "True"
+    type: Admitted
+  - lastTransitionTime: "2020-08-17T12:48:10Z"
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2020-08-17T12:48:10Z"
+    message: The deployment has Available status condition set to True
+    reason: DeploymentAvailable
+    status: "False"
+    type: DeploymentDegraded
+  - lastTransitionTime: "2020-08-17T12:40:58Z"
+    message: The endpoint publishing strategy supports a managed load balancer <1>
+    reason: WantedByEndpointPublishingStrategy
+    status: "True"
+    type: LoadBalancerManaged
+  - lastTransitionTime: "2020-08-17T12:41:01Z"
+    message: The LoadBalancer service is provisioned
+    reason: LoadBalancerProvisioned
+    status: "True"
+    type: LoadBalancerReady
+  - lastTransitionTime: "2020-08-17T12:40:58Z"
+    message: DNS management is supported and zones are specified in the cluster DNS <2>
+      config.
+    reason: Normal
+    status: "True"
+    type: DNSManaged
+  - lastTransitionTime: "2020-08-17T12:41:02Z"
+    message: The record is provisioned in all reported zones.
+    reason: NoFailedZones
+    status: "True"
+    type: DNSReady
+  - lastTransitionTime: "2020-08-17T12:48:10Z"
+    status: "False"
+    type: Degraded
+  domain: apps.bygbszpt.eastus2.aroapp.io
+  endpointPublishingStrategy:
+    loadBalancer:
+      scope: External
+    type: LoadBalancerService
+  observedGeneration: 2
+  selector: ingresscontroller.operator.openshift.io/deployment-ingresscontroller=default
+  tlsProfile:
+    ciphers:
+    - TLS_AES_128_GCM_SHA256
+    - TLS_AES_256_GCM_SHA384
+    - TLS_CHACHA20_POLY1305_SHA256
+    - ECDHE-ECDSA-AES128-GCM-SHA256
+    - ECDHE-RSA-AES128-GCM-SHA256
+    - ECDHE-ECDSA-AES256-GCM-SHA384
+    - ECDHE-RSA-AES256-GCM-SHA384
+    - ECDHE-ECDSA-CHACHA20-POLY1305
+    - ECDHE-RSA-CHACHA20-POLY1305
+    - DHE-RSA-AES128-GCM-SHA256
+    - DHE-RSA-AES256-GCM-SHA384
+    minTLSVersion: VersionTLS12
+
+----
+<1> endpointPublishingStrategy is used to publish the ingress controller.
+<2> Domain DNS management to publish entries to cloud DNS server.
+
+I want to discuss those two things related to ".spec.endpointPublishingStrategy", although we didn't find one defined.
+
+. First the publish strategy is used to publish the ingress controller endpoints to other networks, enable load balancer integrations, etc.
+If unset (as in our case), the default is based on _infrastructure.config.openshift.io/cluster_ .status.platform ;
++
+Cloud Provider (Azure,AWS,GCP,IBMCloud): LoadBalancerService (with External scope)
+Any other platform types (including None) default to HostNetwork.
++
+So lets see what is the value in our case
++
+[source,bash]
+----
+oc get infrastructure.config.openshift.io/cluster -o yaml | grep -A10 status
+----
++
+[source,yaml]
+----
+status:
+  apiServerInternalURI: https://api-int.bygbszpt.eastus2.aroapp.io:6443
+  apiServerURL: https://api.bygbszpt.eastus2.aroapp.io:6443
+  etcdDiscoveryDomain: bygbszpt.eastus2.aroapp.io
+  infrastructureName: aro-amsterdam-09dd-4ntzb
+  platform: Azure
+  platformStatus:
+    azure:
+      networkResourceGroupName: aro-amsterdam-09dd
+      resourceGroupName: aro-amsterdam-09dd-cluster
+    type: Azure
+----
+
+. Second is how this publish strategy is used to publish Domian DNS record in case of cloud providers. You can define Domain per IngressControllers, and this case it must be unique among all IngressControllers, and cannot be
+updated. If empty, defaults to _ingress.config.openshift.io/cluster_ .spec.domain.
++
+[source,bash]
+----
+oc get ingress.config.openshift.io/cluster -o yaml
+----
++
+[source,yaml]
+----
+apiVersion: config.openshift.io/v1
+kind: Ingress
+metadata:
+  creationTimestamp: "2020-08-17T12:30:59Z"
+  generation: 1
+  name: cluster
+  resourceVersion: "448" deployment controller to scale up deployment controller to scale up
+the new replica set first and scale down the old replica set once the new replica is ready.
++
+the new replica set first and scale down the old replica set once the new replica is ready.
++
+  selfLink: /apis/config.openshift.io/v1/ingresses/cluster
+  uid: 2db83d57-45a4-46ee-84b2-d75e5e3a8b4c
+spec:
+  domain: apps.bygbszpt.eastus2.aroapp.io
+status: {}
+----
++
+image::https://github.com/openshift/cluster-ingress-operator/raw/master/docs/images/endpoint-publishing-loadbalancerservice.png[]
+
+. Deployment Strategy & Affinity Policy for default IngressController
++
+To avoid downtime during a rolling update, we need two things: a deployment strategy and affinity policy.
++
+First,the deployment strategy: During a rolling update, we want the deployment controller to scale up
+the new replica set first and scale down the old replica set once the new replica is ready.
++
+[source,bash]
+----
+$ oc get $(oc get deployment -n openshift-ingress -o name) -n openshift-ingress -o yaml | grep -A4 strategy
+----
++
+[source,yaml]
+----
+ strategy:
+   rollingUpdate:
+     maxSurge: 1
+     maxUnavailable: 0
+   type: RollingUpdate
+----
++
+the affinity policy: We want the deployment controller to scale the new replica set up in such a way that
+each new pod is colocated with a pod from the old replica set.
++
+To this end, The operator add a label with a hash of the deployment,
+using which it can select replicas of the same generation (or select replicas that are *not* of the same generation),
+The operator configure affinity to colocate replicas of different generations of the same ingress controller,
+and configure anti-affinity to prevent colocation of replicas of the same generation of the same ingress controller.
++
+Together, the deployment strategy and affinity policy ensure that a node that had local endpoints at the start of
+a rolling update continues to have local endpoints for the throughout and at the completion of the update.
++
+[source,bash]
+----
+$ oc get $(oc get deployment -n openshift-ingress -o name) -n openshift-ingress -o yaml | grep -A28 affinity
+----
++
+[source,yaml]
+----
+  affinity:
+    podAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: ingresscontroller.operator.openshift.io/deployment-ingresscontroller
+              operator: In
+              values:
+              - default
+            - key: ingresscontroller.operator.openshift.io/hash
+              operator: NotIn
+              values:
+              - 6f7d9b6c8b
+          topologyKey: kubernetes.io/hostname
+        weight: 100
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: ingresscontroller.operator.openshift.io/deployment-ingresscontroller
+            operator: In
+            values:
+            - default
+          - key: ingresscontroller.operator.openshift.io/hash
+            operator: In
+            values:
+            - 6f7d9b6c8b
+        topologyKey: kubernetes.io/hostname
+----
++
+As mentioned, the LoadBalance ServiceType is managed also by the Openshift Ingress Operator.
++
+In this case the default ingresscontroller,deployed and manages a LoadBalancer Service Type (router-default svc) and a ClusterIP Service Type (router-internal-default svc).
++
+[source,bash]
+----
+$ oc get svc -n openshift-ingress
+NAME                      TYPE           CLUSTER-IP       EXTERNAL-IP     PORT(S)                      AGE
+router-default            LoadBalancer   172.30.212.204   52.251.10.159   80:30677/TCP,443:31839/TCP   8h
+router-internal-default   ClusterIP      172.30.242.196   <none>          80/TCP,443/TCP,1936/TCP      8h
+----
+
+== Create Ingress Controller shard
+
+.sharded-ingress-controller-namespace-selector.yaml
+[source,yaml]
+----
+apiVersion: operator.openshift.io/v1
+kind: IngressController
+metadata:
+  name: sharded-ingress-controller
+  namespace: openshift-ingress-operator
+spec:
+  replicas: 1
+  domain: internalapps.bygbszpt.eastus2.aroapp.io <1>
+  endpointPublishingStrategy: <2>
+    loadBalancer:
+      scope: External
+    type: LoadBalancerService
+    nodePlacement: <3>
+        nodeSelector:
+          matchLabels:
+            node-role.kubernetes.io/worker: ""
+  namespaceSelector: <4>
+      matchLabels:
+        type: sharded
+----
+<1> domain: Azure DNS A record *internalapps willl be created and manage automatically by the operator
+<2> endpointPublishingStrategy: used to publish the ingress controller endpoints to other networks, enable load balancer integrations, etc. LoadBalancerService in our case (AWS) for deploy the ELB.
+<3> nodePlacement: NodePlacement describes node scheduling configuration for an ingress controller. In our case have a matchLabel to deploy the ingress controller only into Workers.
+<4> The Ingress Controller selects routes in any namespace that is selected by the route selector that have the label type: sharded
+
+[NOTE]
+====
+Please note that there an attribute to set the route certificate (I don't need it now and will use generated one)
+defaultCertificate: a reference to a secret containing the default certificate served by the ingress controller. When Routes
+don't specify their own certificate, defaultCertificate is used.
+The secret must contain the following keys and data:
+
+* tls.crt:certificate file contents
+* tls.key: key file contents
+
+
+If unset, a wildcard certificate is automatically generated and used. The certificate
+is valid for the ingress controller domain (and subdomains) and the
+generated certificate's CA will be automatically integrated with the
+cluster's trust store. The in-use certificate (whether generated or user-specified)
+will be automatically integrated with OpenShift's built-in OAuth server.
+====
+
+. Add the new Ingress Controller
++
+Before applying the new Controller, lets have a look at the DNS Entries
++
+image::images/before_shard[]
++
+Apply the Ingress Controller sharded-ingress-controller-namespace-selector.yaml file:
++
+[source,bash]
+----
+oc apply -f sharded-ingress-controller-namespace-selector.yaml
+----
++
+now lets look again at the at the DNS Entries
++
+image::images/after_shard[]
++
+[source,bash]
+----
+ibmcloud oc nlb-dns ls --cluster myclustername
+----
++
+[source,bash]
+----
+$ oc get svc -n openshift-ingress
+NAME                                         TYPE           CLUSTER-IP       EXTERNAL-IP     PORT(S)                      AGE
+router-default                               LoadBalancer   172.30.212.204   52.251.10.159   80:30677/TCP,443:31839/TCP   2d6h
+router-internal-default                      ClusterIP      172.30.242.196   <none>          80/TCP,443/TCP,1936/TCP      2d6h
+router-internal-sharded-ingress-controller   ClusterIP      172.30.58.73     <none>          80/TCP,443/TCP,1936/TCP      2m48s
+router-sharded-ingress-controller            LoadBalancer   172.30.203.170   52.177.82.100   80:32580/TCP,443:31209/TCP   2m48s
+----
+
+== Create demo applications
+
+So now we will start with creating demo applications.
+
+[source,bash]
+----
+oc new-project sample1
+oc new-app httpd
+
+oc new-project sample2
+oc label namespace sample2 type=sharded
+oc new-app httpd
+----
+
+Now let see the route definition
+
+.route-namespace-selector.yaml
+[source,yaml]
+----
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: httpd
+    app.kubernetes.io/component: httpd
+    app.kubernetes.io/instance: httpd
+  name: httpd-shard-1
+  namespace: sample2
+spec:
+  host: httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud <1>
+  subdomain: ""
+  port:
+    targetPort: 8080-tcp
+  to:
+    kind: Service
+    name: httpd
+    weight: 100
+  wildcardPolicy: None
+----
+<1> Don't forget to update it to match your DNS entry.
+
+[source,bash]
+----
+oc apply -f route-namespace-selector.yaml
+----
+
+Now lets try to check communication accessibility
+
+[source,bash]
+----
+curl --max-time 2 http://httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud
+----
+
+== Enable Network polices
+
+In the previous section we created a route which is exposed using "sharded-ingress". But by default, the default router have no routeSelector,
+and for this reason still we can expose routes using default router
+
+[source,bash]
+----
+oc expose svc/httpd --hostname=httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud
+----
+
+Now lets try to play with curl to check communication accessibility
+
+[source,bash]
+----
+# The route exposed on default router
+curl  --max-time 2 http://httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud
+
+# The route exposed on sharded-ingress router
+curl --max-time 2 http://httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud
+----
+
+Following documentation https://docs.openshift.com/container-platform/4.3/networking/configuring-networkpolicy.html#nw-networkpolicy-multitenant-isolation_configuring-networkpolicy-plugin[Configuring multitenant isolation using NetworkPolicy]
+
+The following yaml will create multitenant isolation, so pods within sample1 namesapce only are allowed to communicate, and also incoming communication from both default ingress and monitoring
+
+.networkPolicy-default-ingress.yaml
+[source, yaml]
+----
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: deny-by-default
+  namespace: sample1
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-from-openshift-default-ingress
+  namespace: sample1
+spec:
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            network.openshift.io/policy-group: ingress
+        podSelector:
+          matchLabels:
+            ingresscontroller.operator.openshift.io/deployment-ingresscontroller: default
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-openshift-monitoring
+  namespace: sample1
+spec:
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            network.openshift.io/policy-group: monitoring
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-same-namespace
+  namespace: sample1
+spec:
+  podSelector:
+  ingress:
+  - from:
+    - podSelector: {}
+----
+
+[source,bash]
+----
+oc apply -f networkPolicy-default-ingress.yaml
+----
+
+The following yaml will create multitenant isolation, so pods within sample2 namesapce only are allowed to communicate, and also incoming communication from both sharded-ingress-controller and monitoring
+
+.networkPolicy-sharded-ingress.yaml
+[source, yaml]
+----
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: deny-by-default
+  namespace: sample1
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-from-openshift-default-ingress
+  namespace: sample1
+spec:
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            network.openshift.io/policy-group: ingress
+        podSelector:
+          matchLabels:
+            ingresscontroller.operator.openshift.io/deployment-ingresscontroller: sharded-ingress-controller
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-openshift-monitoring
+  namespace: sample1
+spec:
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            network.openshift.io/policy-group: monitoring
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-same-namespace
+  namespace: sample1
+spec:
+  podSelector:
+  ingress:
+  - from:
+    - podSelector: {}
+----
+[source,bash]
+----
+oc apply -f networkPolicy-sharded-ingress.yaml
+----
+
+Now lets try again curl to check communication accessibility
+
+[source,bash]
+----
+# The route exposed on default router
+curl  --max-time 2 http://httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud
+
+# The route exposed on sharded-ingress router
+curl --max-time 2 http://httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud
+----

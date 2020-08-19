@@ -1,0 +1,26 @@
+:data-uri:
+:toc: left
+:markup-in-source: +verbatim,+quotes,+specialcharacters
+:source-highlighter: rouge
+:icons: font
+:stylesdir: stylesheets
+:stylesheet: colony.css
+
+= Azure Cloud
+The idea of this series is to understand the IBM Cloud echo system with respect to OpenShift
+
+:sectnums:
+
+== Provision
+
+Explaining how to use IBM Cloud CLI to provision OpenShift using https://github.com/openshift/ibm-roks-toolkit[RedHat OpenShift Kubernetes Service (ROKS)].
+
+link:provision/[Provision]
+
+== Ingress Sharding
+
+Explaining how to add additional Ingress controller for sharding Ingress Traffic in IBM Cloud.
+Ingress Controller sharding is useful when balancing incoming traffic load among a set of Ingress Controllers and when isolating traffic
+to a specific Ingress Controller. For example hosting multiple environments, so development goes to one Ingress Controller and Testing to another.
+
+link:ingress-sharding/[Ingress Sharding]
