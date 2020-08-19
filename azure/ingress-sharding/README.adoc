@@ -296,7 +296,7 @@ will be automatically integrated with OpenShift's built-in OAuth server.
 +
 Before applying the new Controller, lets have a look at the DNS Entries
 +
-image::images/before_shard[]
+image::images/before_shard.png[]
 +
 Apply the Ingress Controller sharded-ingress-controller-namespace-selector.yaml file:
 +
@@ -307,7 +307,7 @@ oc apply -f sharded-ingress-controller-namespace-selector.yaml
 +
 now lets look again at the at the DNS Entries
 +
-image::images/after_shard[]
+image::images/after_shard.png[]
 +
 .IMPORTANT
 ====
