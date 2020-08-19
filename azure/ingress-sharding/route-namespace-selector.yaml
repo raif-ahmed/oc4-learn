@@ -8,7 +8,7 @@ metadata:
   name: httpd-shard-1
   namespace: sample2
 spec:
-  host: httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud
+  host: httpd-1-sample2.internalapps.bygbszpt.eastus2.aroapp.io
   subdomain: ""
   port:
     targetPort: 8080-tcp
