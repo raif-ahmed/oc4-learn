@@ -309,7 +309,7 @@ now lets look again at the at the DNS Entries
 +
 image::images/after_shard.png[]
 +
-.IMPORTANT
+[IMPORTANT]
 ====
 DNS records are managed only in DNS zones defined by dns.config.openshift.io/cluster ".spec.publicZone" and ".spec.privateZone."
 ====
@@ -376,7 +376,7 @@ metadata:
   name: httpd-shard-1
   namespace: sample2
 spec:
-  host: httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud <1>
+  host: httpd-1-sample2.internalapps.bygbszpt.eastus2.aroapp.io <1>
   subdomain: ""
   port:
     targetPort: 8080-tcp
@@ -397,7 +397,7 @@ Now lets try to check communication accessibility
 
 [source,bash]
 ----
-curl --max-time 2 http://httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud
+curl --max-time 2 http://httpd-1-sample2.internalapps.bygbszpt.eastus2.aroapp.io
 ----
 
 == Enable Network polices
@@ -407,7 +407,7 @@ and for this reason still we can expose routes using default router
 
 [source,bash]
 ----
-oc expose svc/httpd --hostname=httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud
+oc expose svc/httpd --hostname=httpd-1-sample2.internalapps.bygbszpt.eastus2.aroapp.io
 ----
 
 Now lets try to play with curl to check communication accessibility
@@ -415,10 +415,9 @@ Now lets try to play with curl to check communication accessibility
 [source,bash]
 ----
 # The route exposed on default router
-curl  --max-time 2 http://httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud
-
+curl  --max-time 2 http://httpd-1-sample2.internalapps.bygbszpt.eastus2.aroapp.io
 # The route exposed on sharded-ingress router
-curl --max-time 2 http://httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud
+curl --max-time 2 http://httpd-1-sample2.internalapps.bygbszpt.eastus2.aroapp.io
 ----
 
 Following documentation https://docs.openshift.com/container-platform/4.3/networking/configuring-networkpolicy.html#nw-networkpolicy-multitenant-isolation_configuring-networkpolicy-plugin[Configuring multitenant isolation using NetworkPolicy]
@@ -557,8 +556,8 @@ Now lets try again curl to check communication accessibility
 [source,bash]
 ----
 # The route exposed on default router
-curl  --max-time 2 http://httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0000.ams03.containers.appdomain.cloud
+curl  --max-time 2 http://httpd-1-sample2.internalapps.bygbszpt.eastus2.aroapp.io
 
 # The route exposed on sharded-ingress router
-curl --max-time 2 http://httpd-1-sample2.myclustername-757467-5c19b80d0b42bf06f50309d5c8a080e8-0001.ams03.containers.appdomain.cloud
+curl --max-time 2 http://httpd-1-sample2.internalapps.bygbszpt.eastus2.aroapp.io
 ----
