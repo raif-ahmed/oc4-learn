@@ -309,9 +309,32 @@ now lets look again at the at the DNS Entries
 +
 image::images/after_shard[]
 +
+.IMPORTANT
+====
+DNS records are managed only in DNS zones defined by dns.config.openshift.io/cluster ".spec.publicZone" and ".spec.privateZone."
+====
++
 [source,bash]
 ----
-ibmcloud oc nlb-dns ls --cluster myclustername
+oc get dns.config.openshift.io/cluster -o yaml
+----
++
+[source,bash]
+----
+apiVersion: config.openshift.io/v1
+kind: DNS
+metadata:
+  creationTimestamp: "2020-08-17T12:30:58Z"
+  generation: 1
+  name: cluster
+  resourceVersion: "445"
+  selfLink: /apis/config.openshift.io/v1/dnses/cluster
+  uid: bed19cc5-43d9-4ab2-81e2-9840c6b2e96c
+spec:
+  baseDomain: bygbszpt.eastus2.aroapp.io
+  privateZone:
+    id: /subscriptions/ede7f891-835c-4128-af5b-0e53848e54e7/resourceGroups/aro-amsterdam-09dd-cluster/providers/Microsoft.Network/privateDnsZones/bygbszpt.eastus2.aroapp.io
+status: {}
 ----
 +
 [source,bash]
