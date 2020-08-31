@@ -1,0 +1,67 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ArgoCD
+metadata:
+  name: argocd
+  labels:
+    profile: redhat-canada-gitops
+spec:
+  server:
+    insecure: true
+    route:
+      enabled: true
+      tls:
+        termination: edge
+        insecureEdgeTerminationPolicy: Redirect
+  dex:
+    image: quay.io/redhat-cop/dex
+    version: v2.22.0-openshift
+    openShiftOAuth: true
+  applicationInstanceLabelKey: argocd.argoproj.io/instance
+  resourceCustomizations: |
+    bitnami.com/SealedSecret:
+      ignoreDifferences: |
+        jsonPointers:
+        - /status
+    build.openshift.io/BuildConfig:
+      ignoreDifferences: |
+        jsonPointers:
+        - /status/lastVersion
+    route.openshift.io/Route:
+      ignoreDifferences: |
+        jsonPointers:
+        - /status/ingress
+    /ServiceAccount:
+      ignoreDifferences: |
+        jsonPointers:
+        - /imagePullSecrets
+    PersistentVolumeClaim:
+      health.lua: |
+        hs = {}
+        if obj.status ~= nil then
+          if obj.status.phase ~= nil then
+            if obj.status.phase == "Pending" then
+              hs.status = "Healthy"
+              hs.message = obj.status.phase
+              return hs
+            end
+            if obj.status.phase == "Bound" then
+              hs.status = "Healthy"
+              hs.message = obj.status.phase
+              return hs
+            end
+          end
+        end
+        hs.status = "Progressing"
+        hs.message = "Waiting for certificate"
+        return hs
+  resourceExclusions: |
+    - apiGroups:
+      - tekton.dev
+      kinds:
+      - PipelineRun
+  rbac:
+    defaultPolicy: role:readonly
+    policy: |
+      g, argocdadmins, role:admin
+      g, argocdusers, role:readonly
+    scopes: "[groups]"

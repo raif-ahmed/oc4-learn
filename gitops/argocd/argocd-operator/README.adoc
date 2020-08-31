@@ -1,0 +1,122 @@
+= Install ArgoCD Operator
+
+
+.References :
+https://github.com/dgoodwin/openshift4-gitops
+https://github.com/christianh814/gitops-examples/tree/rhug
+https://blog.openshift.com/introduction-to-gitops-with-openshift/
+https://github.com/openshift/openshift-docs/pull/19429
+
+:sectnums:
+
+== Inspect the Operator information
+
+following are the steps to install the operator
+
+we want to get information about the current operator csv and its provided API.
+First thing is to ensure that the opertaor exists in the channel catalogue.
+
+[source,bash]
+----
+$ oc get packagemanifests -n openshift-marketplace | grep argo
+----
+
+Now we want to get the CSV information that we will use later.
+
+[source,bash]
+----
+$ oc describe packagemanifests/argocd-operator -n openshift-marketplace | grep -A36 Channels
+
+Channels:
+   Current CSV:  argocd-operator.v0.0.12 <1>
+   Current CSV Desc:
+     Annotations:
+       Alm - Examples:   [{"apiVersion":"argoproj.io/v1alpha1","kind":"ArgoCD","metadata":{"name":"example-argocd"},"spec":{}},{"apiVersion":"argoproj.io/v1alpha1","kind":"ArgoCDExport","metadata":{"name":"example-argocdexport"},"spec":{"argocd":"example-argocd"}},{"apiVersion":"argoproj.io/v1alpha1","kind":"Application","metadata":{"name":"guestbook"},"spec":{"destination":{"namespace":"argocd","server":"https://kubernetes.default.svc"},"project":"default","source":{"path":"guestbook","repoURL":"https://github.com/argoproj/argocd-example-apps.git","targetRevision":"HEAD"}}},{"apiVersion":"argoproj.io/v1alpha1","kind":"AppProject","metadata":{"name":"example-project"},"spec":{"sourceRepos": ["*"]}}]
+       Capabilities:     Auto Pilot
+       Categories:       Integration & Delivery
+       Certified:        false
+       Container Image:  quay.io/jmckind/argocd-operator@sha256:a0ca1a848bf19ae7ddad3c367f083c9713d0040317352e9a52633b4fbf2df1f0
+       Created At:       2020-07-15 15:23:47
+       Description:      Argo CD is a declarative, GitOps continuous delivery tool for Kubernetes.
+       Repository:       https://github.com/argoproj-labs/argocd-operator
+       Support:          Argo CD
+     Apiservicedefinitions:
+     Customresourcedefinitions: <2>
+       Owned:
+         Description:   An Application is a group of Kubernetes resources as defined by a manifest.
+         Display Name:  Application
+         Kind:          Application
+         Name:          AppProject.v1alpha1.argoproj.io,Application.v1alpha1.argoproj.io,ArgoCD
+         Version:       v1alpha1
+         Description:   An AppProject is a logical grouping of Argo CD Applications.
+         Display Name:  AppProject
+         Kind:          AppProject
+         Name:          appprojects.argoproj.io
+         Version:       v1alpha1
+         Description:   ArgoCDExport describes the desired state for the export of a given Argo CD deployment.
+         Display Name:  ArgoCDExport
+         Kind:          ArgoCDExport
+         Name:          argocdexports.argoproj.io
+         Version:       v1alpha1
+         Description:   ArgoCD is the representation of an Argo CD deployment.
+         Display Name:  ArgoCD
+         Kind:          ArgoCD
+         Name:          argocds.argoproj.io
+         Version:       v1alpha1
+     Description:       ## Overview
+----
+<1> current CSV of the package.
+<2> notice the Kind,Version,and the group (argoproj.io) field of list of CRDs, as this will be used to define the providedAPIs in OperatorGroup
+
+== Create a Subscription
+
+As per the documentation https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/architecture.md#catalog-operator["`A user wanting a specific operator creates a Subscription which identifies a catalog, operator and channel within that operator. The Catalog Operator then receives that information and queries the catalog for the latest version of the channel requested. Then it looks up the appropriate ClusterServiceVersion identified by the channel and turns that into an InstallPlan.`"]
+
+So we will create a subscription
+
+.link:argocd-operator/base/argocd-subscription.yaml[argocd-operator/base/argocd-subscription.yaml]
+[source,yaml]
+----
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: argocd-operator
+spec:
+  channel: alpha
+  installPlanApproval: Automatic
+  name: argocd-operator
+  source: community-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: argocd-operator.v0.0.12 <1>
+----
+<1> the starting CSV version we want, it should match the current CSV
+
+It is possible to configure how OLM deploys an Operator via the config field in the Subscription object, There is another subscription file if we want to run ArgoCD on infra nodes only, link:argocd-operator/base/argocd-subscription-infra.yaml[argocd-operator/base/argocd-subscription-infra.yaml]
+
+== Create an Operator Group
+
+An OperatorGroup is an OLM resource that provides multitenant configuration to OLM-installed Operators. An OperatorGroup selects target namespaces in which to generate required RBAC access for its member Operators.
+
+.link:argocd-operator/base/argocd-operatorgroup.yaml[argocd-operator/base/argocd-operatorgroup.yaml]
+[source,yaml]
+----
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  annotations:
+    olm.providedAPIs: AppProject.v1alpha1.argoproj.io,Application.v1alpha1.argoproj.io,ArgoCD.v1alpha1.argoproj.io,ArgoCDExport.v1alpha1.argoproj.io <1>
+  generateName: argocd-
+  name: argocd
+spec:
+  targetNamespaces:
+  - argocd <2>
+----
+<1> The annotation’s value is a string consisting of GroupVersionKinds (GVKs) in the format of <kind>.<version>.<group> delimited with commas. The GVKs of CRDs and APIServices provided by all active member CSVs of an OperatorGroup are included.
+<2> Target namespace selection, explicitly name the target namespace for an OperatorGroup. We define "argocd" as the target namespace that will be watched.
+
+
+== Deploy the Operator
+[source,bash]
+----
+$ oc apply -k argocd-operator/overlays/default
+----

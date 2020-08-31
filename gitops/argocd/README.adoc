@@ -6,44 +6,37 @@ The idea of
 ** https://argoproj.github.io/argo-cd/operator-manual/[]
 
 :sectnums:
+== High level architecture
 
-== What is ArgoCD?
+* Deployment scope
+** Central “ArgoCD” instance managing many applications
+* Deployment Strategy
+** Operator vs Manifests.
+o Deployment types
+▪ HA
+ This runs more containers, and run Redis in HA mode.
+The HA installation will require at least three different nodes due to pod anti-affinity roles in the specs.
 
 
-when you Create a new Argo CD cluster in the argocd namespace, following objects will be created.
 
-[cols="25%a,25%a,25%a,25%a",options="header"]
-|===
-|File Name |Resource Name |Kind |Description
+o Authentication
+▪ OpenShift integrated ? https://www.openshift.com/blog/openshiftauthentication-integration-with-argocd
+▪ Use Argo Auth provider
+o Storing sensitive values – Secret Management
+Commented [Si'HW(1]: Needs to be verified
+▪ https://git-secret.io/ (for time being)
+▪ https://www.openshift.com/blog/gitops-secret-management
+o RBAC
+▪ If users are going to interact with ArgoCD via CLI (or other non-UI tooling) an
+additional RBAC role is required to grant them access to create Application
+CR
+o SSL Certificates for route
+o Git Repositories
+▪ SSH configuration (if needed)
+o Metrics (Prom integration)
 
-|argocd-cm.yaml
-|argocd-cm
-|ConfigMap
-|General Argo CD configuration
+== Deployment Strategy
 
-|argocd-secret.yaml
-|argocd-secret
-|Secret
-|Password, Certificates, Signing Key
+For installing the ArgoCD, we will use the Operator. for more details see
 
-|argocd-rbac-cm.yaml
-|argocd-rbac-cm
-|ConfigMap
-|RBAC Configuration
-
-|argocd-tls-certs-cm.yaml
-|argocd-tls-certs-cm
-|ConfigMap
-|Custom TLS certificates for connecting Git repositories via HTTPS (v1.2 and later)
-
-|argocd-ssh-known-hosts-cm.yaml
-|argocd-ssh-known-hosts-cm
-|ConfigMap	SSH known hosts data for connecting Git repositories via SSH (v1.2 and later)
-
-|===
-
-Applications
-The Application CRD is the Kubernetes resource object representing a deployed application instance in an environment.
-It is defined by two key pieces of information:
-* *source* reference to the desired state in Git (repository, revision, path, environment)
-* *destination* reference to the target cluster and namespace.
+link:argocd-operator[installing ArgoCD Operator]
