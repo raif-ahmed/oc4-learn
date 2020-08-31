@@ -2,10 +2,10 @@
 
 
 .References :
-https://github.com/dgoodwin/openshift4-gitops
-https://github.com/christianh814/gitops-examples/tree/rhug
-https://blog.openshift.com/introduction-to-gitops-with-openshift/
-https://github.com/openshift/openshift-docs/pull/19429
+** https://github.com/dgoodwin/openshift4-gitops[]
+** https://github.com/christianh814/gitops-examples/tree/rhug[]
+** https://blog.openshift.com/introduction-to-gitops-with-openshift/[]
+** https://github.com/openshift/openshift-docs/pull/19429[]
 
 :sectnums:
 

@@ -4,23 +4,19 @@ The idea of
 
 .References :
 ** https://argoproj.github.io/argo-cd/operator-manual/[]
+** https://www.openshift.com/blog/openshiftauthentication-integration-with-argocd[]
 
 :sectnums:
 == High level architecture
 
-* Deployment scope
-** Central “ArgoCD” instance managing many applications
 * Deployment Strategy
-** Operator vs Manifests.
-o Deployment types
-▪ HA
- This runs more containers, and run Redis in HA mode.
-The HA installation will require at least three different nodes due to pod anti-affinity roles in the specs.
-
-
-
-o Authentication
-▪ OpenShift integrated ? https://www.openshift.com/blog/openshiftauthentication-integration-with-argocd
+** Using Operator vs Manifests.
+* Deployment scope
+** Central/Single “ArgoCD” instance managing many applications
+* Deployment types
+** Configure HA: This runs more containers, and run Redis in HA mode (The HA installation will require at least three different nodes due to pod anti-affinity roles in the specs).
+*  Authentication
+** OpenShift integrated ? https://www.openshift.com/blog/openshiftauthentication-integration-with-argocd
 ▪ Use Argo Auth provider
 o Storing sensitive values – Secret Management
 Commented [Si'HW(1]: Needs to be verified
