@@ -74,7 +74,7 @@ As per the documentation https://github.com/operator-framework/operator-lifecycl
 
 So we will create a subscription
 
-.link:argocd-operator/base/argocd-subscription.yaml[argocd-operator/base/argocd-subscription.yaml]
+.link:base/argocd-subscription.yaml[base/argocd-subscription.yaml]
 [source,yaml]
 ----
 apiVersion: operators.coreos.com/v1alpha1
@@ -91,13 +91,13 @@ spec:
 ----
 <1> the starting CSV version we want, it should match the current CSV
 
-It is possible to configure how OLM deploys an Operator via the config field in the Subscription object, There is another subscription file if we want to run ArgoCD on infra nodes only, link:argocd-operator/base/argocd-subscription-infra.yaml[argocd-operator/base/argocd-subscription-infra.yaml]
+It is possible to configure how OLM deploys an Operator via the config field in the Subscription object, There is another subscription file if we want to run ArgoCD on infra nodes only, link:base/argocd-subscription-infra.yaml[base/argocd-subscription-infra.yaml]
 
 == Create an Operator Group
 
 An OperatorGroup is an OLM resource that provides multitenant configuration to OLM-installed Operators. An OperatorGroup selects target namespaces in which to generate required RBAC access for its member Operators.
 
-.link:argocd-operator/base/argocd-operatorgroup.yaml[argocd-operator/base/argocd-operatorgroup.yaml]
+.link:base/argocd-operatorgroup.yaml[base/argocd-operatorgroup.yaml]
 [source,yaml]
 ----
 apiVersion: operators.coreos.com/v1
