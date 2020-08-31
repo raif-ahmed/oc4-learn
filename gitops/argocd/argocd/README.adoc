@@ -1,0 +1,111 @@
+= Configure ArgoCD Instance
+
+The idea of
+
+.References :
+** https://argocd-operator.readthedocs.io/en/latest/[]
+** https://argocd-operator.readthedocs.io/en/latest/usage/ha/[]
+** https://argocd-operator.readthedocs.io/en/latest/reference/api.html/
+
+** https://argoproj.github.io/argo-cd/operator-manual/[]
+** https://www.openshift.com/blog/openshiftauthentication-integration-with-argocd[]
+
+:sectnums:
+
+== Deployment scope
+
+As we are going to install one Argo CD instance we need to create a single ArgoCD CRD in the namespace of argocd (operator is watching this namesapce)
+to define all its properties and features.
+So the rest of this README is targeting different sections of link:base/argocd.yaml[base/argocd.yaml] to configure specific feature
+
+The basic part is as follows
+
+.link:base/argocd.yaml[base/argocd.yaml]
+[source,yaml]
+----
+apiVersion: argoproj.io/v1alpha1
+kind: ArgoCD
+metadata:
+  name: argocd
+  labels:
+    target: argocd-application-delivery
+spec:
+  ....
+----
+== HA Deployment type
+
+We are going to configure HA for Argo CD instance, refer to https://argocd-operator.readthedocs.io/en/latest/usage/ha/[]
+
+.link:base/argocd.yaml[base/argocd.yaml]
+[source,yaml]
+----
+...
+spec:
+  ....
+  ha:
+    enabled: true
+    redisProxyImage: haproxy
+    redisProxyVersion: "2.0.4"
+....
+----
+
+== Authentication
+
+We are going to configure OpenShift OAuth server for authentication (based on Andrew Blog https://www.openshift.com/blog/openshiftauthentication-integration-with-argocd[])
+
+.link:base/argocd.yaml[base/argocd.yaml]
+[source,yaml]
+----
+...
+spec:
+  ....
+  dex:
+    image: quay.io/redhat-cop/dex
+    version: v2.22.0-openshift
+    openShiftOAuth: true
+....
+----
+
+=== RBAC
+
+.link:base/argocd.yaml[base/argocd.yaml]
+[source,yaml]
+----
+...
+spec:
+  ....
+  rbac:
+    defaultPolicy: role:readonly
+    policy: |
+      g, argocdadmins, role:admin
+      g, argocdusers, role:readonly
+    scopes: "[groups]"
+....
+----
+
+=== Server Route Options
+
+Configure the Route for the Argo CD Server component.
+
+.link:base/argocd.yaml[base/argocd.yaml]
+[source,yaml]
+----
+...
+spec:
+  ....
+  server:
+    insecure: false
+    route:
+      enabled: true
+      tls:
+        termination: edge
+        insecureEdgeTerminationPolicy: Redirect
+....
+----
+
+== Deploy the ArgoCD Instance
+
+[source,bash]
+----
+$ oc apply -k argocd/overlays/default
+----

@@ -1,4 +1,4 @@
-= Install ArgoCD Operator
+= Deploying ArgoCD Operator
 
 
 .References :

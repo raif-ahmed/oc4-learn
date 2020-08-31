@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ArgoCD
+metadata:
+  name: argocd
+  labels:
+    target: argocd-application-delivery
+spec:
+  ha:
+    enabled: true
+    redisProxyImage: haproxy
+    redisProxyVersion: "2.0.4"
+  server:
+    insecure: false
+    route:
+      enabled: true
+      tls:
+        termination: edge
+        insecureEdgeTerminationPolicy: Redirect
+  dex:
+    image: quay.io/redhat-cop/dex
+    version: v2.22.0-openshift
+    openShiftOAuth: true
+  applicationInstanceLabelKey: argocd.argoproj.io/instance
+  resourceExclusions: |
+    - apiGroups:
+      - tekton.dev
+      kinds:
+      - PipelineRun
+  rbac:
+    defaultPolicy: role:readonly
+    policy: |
+      g, argocdadmins, role:admin
+      g, argocdusers, role:readonly
+    scopes: "[groups]"

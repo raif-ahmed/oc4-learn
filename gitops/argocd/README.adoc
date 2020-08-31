@@ -1,28 +1,32 @@
-= Manage API Objects, using Kustomize
+= ArgoCD
 
-The idea of
-
-.References :
-** https://argoproj.github.io/argo-cd/operator-manual/[]
-** https://www.openshift.com/blog/openshiftauthentication-integration-with-argocd[]
+IMPORTANT: Heavily based on RedHat Canada GitOps team https://github.com/redhat-canada-gitops/argocd
 
 :sectnums:
 == High level architecture
 
 * Deployment Strategy
-** Using Operator vs Manifests.
+** Using Operator
 * Deployment scope
 ** Central/Single “ArgoCD” instance managing many applications
 * Deployment types
-** Configure HA: This runs more containers, and run Redis in HA mode (The HA installation will require at least three different nodes due to pod anti-affinity roles in the specs).
+** https://argoproj.github.io/argo-cd/operator-manual/high_availability/[Configure HA:] This runs more containers, and run Redis in HA mode (The HA installation will require at least three different nodes due to pod anti-affinity roles in the specs).
 *  Authentication
 ** OpenShift integrated ? https://www.openshift.com/blog/openshiftauthentication-integration-with-argocd
 ** RBAC
 *** If users are going to interact with ArgoCD via CLI (or other non-UI tooling) an additional RBAC role is required to grant them access to create Application CR
 ** Metrics (Prom integration)
 
-== Deployment Strategy
+== Deploying ArgoCD Operator
 
 For installing the ArgoCD, we will use the Operator. for more details see
 
-link:argocd-operator[installing ArgoCD Operator]
+link:argocd-operator[Deploying ArgoCD Operator]
+
+== Configure ArgoCD Instance
+
+Configure the ArgoCD instance.
+
+for more details see
+
+link:argocd[Configure ArgoCD Instance]
