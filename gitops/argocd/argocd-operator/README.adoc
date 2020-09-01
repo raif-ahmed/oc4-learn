@@ -9,12 +9,12 @@
 
 :sectnums:
 
-== Inspect the Operator information
-
 following are the steps to install the operator
 
+== Inspect the Operator information
+
 we want to get information about the current operator csv and its provided API.
-First thing is to ensure that the opertaor exists in the channel catalogue.
+First thing is to ensure that the operator exists in the channel catalog.
 
 [source,bash]
 ----
@@ -66,7 +66,7 @@ Channels:
      Description:       ## Overview
 ----
 <1> current CSV of the package.
-<2> notice the Kind,Version,and the group (argoproj.io) field of list of CRDs, as this will be used to define the providedAPIs in OperatorGroup
+<2> note the Kind, Version, and the group (argoproj.io) field of list of CRDs, as this will be used to define the providedAPIs in OperatorGroup
 
 == Create a Subscription
 
