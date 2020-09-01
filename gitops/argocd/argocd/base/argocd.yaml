@@ -10,7 +10,7 @@ spec:
     redisProxyImage: haproxy
     redisProxyVersion: "2.0.4"
   server:
-    insecure: false
+    insecure: true
     route:
       enabled: true
       tls:
