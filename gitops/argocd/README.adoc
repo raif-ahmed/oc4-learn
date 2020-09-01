@@ -30,3 +30,7 @@ Configure the ArgoCD instance.
 for more details see
 
 link:argocd[Configure ArgoCD Instance]
+
+== Cluster Bootstrapping
+
+Demo for bootstrapping a cluster based on ArgoCD
