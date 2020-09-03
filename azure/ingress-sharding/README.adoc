@@ -270,7 +270,7 @@ spec:
         type: sharded
 ----
 <1> domain: Azure DNS A record *internalapps willl be created and manage automatically by the operator
-<2> endpointPublishingStrategy: used to publish the ingress controller endpoints to other networks, enable load balancer integrations, etc. LoadBalancerService in our case (AWS) for deploy the ELB.
+<2> endpointPublishingStrategy: used to publish the ingress controller endpoints to other networks, enable load balancer integrations, etc. LoadBalancerService in our case (Azure) for deploy the ELB.
 <3> nodePlacement: NodePlacement describes node scheduling configuration for an ingress controller. In our case have a matchLabel to deploy the ingress controller only into Workers.
 <4> The Ingress Controller selects routes in any namespace that is selected by the route selector that have the label type: sharded
 
