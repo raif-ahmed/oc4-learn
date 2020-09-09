@@ -407,7 +407,7 @@ and for this reason still we can expose routes using default router
 
 [source,bash]
 ----
-oc expose svc/httpd --hostname=httpd-1-sample2.internalapps.bygbszpt.eastus2.aroapp.io
+oc expose svc/httpd --hostname=httpd-1-sample2.apps.bygbszpt.eastus2.aroapp.io
 ----
 
 Now lets try to play with curl to check communication accessibility
@@ -415,7 +415,7 @@ Now lets try to play with curl to check communication accessibility
 [source,bash]
 ----
 # The route exposed on default router
-curl  --max-time 2 http://httpd-1-sample2.internalapps.bygbszpt.eastus2.aroapp.io
+curl  --max-time 2 http://httpd-1-sample2.apps.bygbszpt.eastus2.aroapp.io
 # The route exposed on sharded-ingress router
 curl --max-time 2 http://httpd-1-sample2.internalapps.bygbszpt.eastus2.aroapp.io
 ----
