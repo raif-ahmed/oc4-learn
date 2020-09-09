@@ -11,7 +11,7 @@ spec:
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: allow-from-openshift-default-ingress
+  name: allow-from-openshift-shard-ingress
   namespace: sample2
 spec:
   ingress:
