@@ -407,7 +407,7 @@ and for this reason still we can expose routes using default router
 
 [source,bash]
 ----
-oc expose svc/httpd --hostname=httpd-1-sample2.apps.bygbszpt.eastus2.aroapp.io
+oc expose svc/httpd --hostname=httpd-1-sample2.apps.bygbszpt.eastus2.aroapp.io -n sample2
 ----
 
 Now lets try to play with curl to check communication accessibility
