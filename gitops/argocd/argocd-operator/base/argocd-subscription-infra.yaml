@@ -18,4 +18,4 @@ spec:
       operator: Exists
       key: infra
     nodeSelector:
-      node-role.kubernetes.io/infra:""
+      node-role.kubernetes.io/infra: ""
